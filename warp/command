@@ -1,0 +1,5 @@
+sudo snort --daq-dir snort/libdaq/build/lib/daq -c snort.lua -i enp11s0 --daq afpacket
+git add analyser bin command .gitignore go.mod rules server snort.go snort.lua source.sh .vscode web
+
+snort --daq-dir snort/libdaq/build/lib/daq -r traffic/Friday-WorkingHours.pcap -c snort.lua
+snort --daq-dir snort/libdaq/build/lib/daq -r traffic/Friday-WorkingHours.pcap -c config/snort.lua
