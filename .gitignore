@@ -5,3 +5,5 @@ snort_output.txt
 wrap/alert_json.txt
 wrap/config/all.rules
 wrap/config/rules.db
+*.csv*.csv
+*.csv
