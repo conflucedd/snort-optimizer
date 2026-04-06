@@ -7,3 +7,4 @@ wrap/config/all.rules
 wrap/config/rules.db
 *.csv*.csv
 *.csv
+*.csv
