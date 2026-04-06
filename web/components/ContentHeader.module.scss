@@ -1,0 +1,17 @@
+.root {
+  height: 76px;
+  display: flex;
+  align-items: center;
+}
+
+.title {
+  white-space: nowrap;
+  padding: 0 15px;
+  font-size: 1.7em;
+  margin: 0;
+
+  @media (min-width: 769px) {
+    padding: 0 40px;
+    font-size: 2em;
+  }
+}

@@ -60,7 +60,7 @@ const App = () => (
             <Suspense fallback={<Loading />}>
               <Router>
                 <Routes>
-                  <Route path="/backend" element={<APIConfig />} />
+                  {/* <Route path="/backend" element={<APIConfig />} /> */}
                   <Route path="*" element={<SideBarApp />} />
                 </Routes>
               </Router>

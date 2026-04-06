@@ -13,6 +13,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
+    "build:custom": "node scripts/replace-api-url.js && vite build",
     "serve": "vite preview",
     "prepare": "husky install"
   },

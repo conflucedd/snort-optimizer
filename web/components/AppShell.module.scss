@@ -1,0 +1,16 @@
+.app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: var(--color-background);
+  color: var(--color-text);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+.content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}

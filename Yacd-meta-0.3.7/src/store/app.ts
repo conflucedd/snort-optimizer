@@ -149,8 +149,33 @@ export function updateCollapsibleIsOpen(prefix: string, name: string, v: boolean
   };
 }
 
+// 自动获取当前服务器的API地址
+const getDefaultBaseURL = () => {
+  // 1. 优先使用HTML中配置的data-base-url
+  const htmlBaseUrl = document.getElementById('app')?.getAttribute('data-base-url');
+  if (htmlBaseUrl) return htmlBaseUrl;
+
+  // 2. 默认使用当前页面的协议和主机名，端口9090
+  // 这样无论从哪里访问面板，都会连接面板所在服务器的Clash
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+
+  // 特殊处理本地开发环境
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    return 'http://127.0.0.1:9090';
+  }
+
+  // 处理IPv6地址
+  if (hostname.includes(':')) {
+    // IPv6地址需要加上方括号
+    return `${protocol}//[${hostname}]:9090`;
+  }
+
+  return `${protocol}//${hostname}:9090`;
+};
+
 const defaultClashAPIConfig = {
-  baseURL: document.getElementById('app')?.getAttribute('data-base-url') ?? 'http://127.0.0.1:9090',
+  baseURL: getDefaultBaseURL(),
   secret: '',
   addedAt: 0,
 };

@@ -23,13 +23,13 @@ export function fetchConfigs(apiConfig: ClashAPIConfig) {
       res = await configsAPI.fetchConfigs(apiConfig);
     } catch (err) {
       // TypeError and AbortError
-      dispatch(openModal('apiConfig'));
+      // dispatch(openModal('apiConfig'));
       return;
     }
 
     if (!res.ok) {
       console.log('Error fetch configs', res.statusText);
-      dispatch(openModal('apiConfig'));
+      // dispatch(openModal('apiConfig'));
       return;
     }
 

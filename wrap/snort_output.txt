@@ -1,0 +1,1225 @@
+--------------------------------------------------
+o")~   Snort++ 3.9.0.0
+--------------------------------------------------
+Loading config/snort.lua:
+Loading snort_defaults.lua:
+Finished snort_defaults.lua:
+	file_policy
+	js_norm
+	binder
+	references
+	classifications
+	alert_json
+	profiler
+	netflow
+	ips
+	wizard
+	appid
+	file_id
+	output
+	network
+	host_tracker
+	trace
+	dce_tcp
+	active
+	cip
+	alerts
+	decode
+	host_cache
+	hosts
+	packets
+	process
+	search_engine
+	so_proxy
+	daq
+	stream
+	stream_ip
+	stream_icmp
+	stream_tcp
+	stream_udp
+	stream_user
+	stream_file
+	arp_spoof
+	back_orifice
+	dns
+	imap
+	normalizer
+	pop
+	rpc_decode
+	sip
+	ssh
+	ssl
+	telnet
+	dnp3
+	iec104
+	mms
+	modbus
+	s7commplus
+	dce_smb
+	dce_udp
+	dce_http_proxy
+	dce_http_server
+	gtp_inspect
+	port_scan
+	smtp
+	ftp_server
+	ftp_client
+	ftp_data
+	http_inspect
+	http2_inspect
+Finished config/snort.lua:
+Loading file_id.rules_file:
+Loading file_magic.rules:
+Finished file_magic.rules:
+Finished file_id.rules_file:
+Loading ips.rules:
+Loading all.rules:
+Finished all.rules:
+Finished ips.rules:
+--------------------------------------------------
+pcre counts
+               pcre_rules: 439
+              pcre_native: 439
+--------------------------------------------------
+ips policies rule stats
+              id  loaded  shared enabled    file
+               0    1876       0    1876    config/snort.lua
+--------------------------------------------------
+rule counts
+       total rules loaded: 1876
+               text rules: 1876
+            option chains: 1876
+            chain headers: 167
+                 flowbits: 111
+     flowbits not checked: 40
+         flowbits not set: 58
+--------------------------------------------------
+port rule counts
+             tcp     udp    icmp      ip
+     any      61      15      18      11
+     src      40       6       0       0
+     dst     178      40       0       0
+    both       4       2       0       0
+   total     283      63      18      11
+--------------------------------------------------
+service rule counts          to-srv  to-cli
+                   dcerpc:       62      39
+                     dnp3:        0       1
+                      dns:       11       5
+                     file:       36      38
+                  file_id:      219     219
+                      ftp:        5       0
+                 ftp-data:       37     403
+                     http:      566     540
+                    http2:      566     540
+                    http3:      566     540
+                     imap:       37     411
+                 java_rmi:        1       0
+                   modbus:        0       1
+                    mysql:        2       0
+              netbios-dgm:        1       1
+               netbios-ns:        2       0
+              netbios-ssn:       57      39
+                      ntp:        3       0
+                  openvpn:        1       1
+                     pop3:       37     411
+                      rdp:        1       0
+                     rtsp:        1       1
+                      sip:       11       1
+                     smtp:      349      36
+                     snmp:        2       1
+                      ssl:        6       4
+                   sunrpc:        5       1
+                   telnet:        3       0
+                    total:     2587    3233
+--------------------------------------------------
+fast pattern groups
+                      src: 44
+                      dst: 200
+                      any: 8
+                to_server: 68
+                to_client: 46
+--------------------------------------------------
+search engine (ac_bnfa)
+                instances: 240
+                 patterns: 6343
+            pattern chars: 145638
+               num states: 135058
+         num match states: 7087
+             memory scale: MB
+             total memory: 3.43917
+           pattern memory: 0.380629
+        match list memory: 1.25856
+        transition memory: 1.77068
+        fast pattern only: 3851
+appid: MaxRss diff: 208284
+appid: patterns loaded: 11537
+--------------------------------------------------
+pcap DAQ configured to read-file.
+Commencing packet processing
+++ [0] data/CIC-IDS-2017/Friday-WorkingHours.pcap
+{ "timestamp" : "07/07-20:00:35.342510", "pkt_num" : 279, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.9:1030", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:00:50.242608", "pkt_num" : 1918, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.5:49159", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:01:07.917084", "pkt_num" : 4305, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.9:1042", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:01:10.715155", "pkt_num" : 5169, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 188, "dir" : "C2S", "src_ap" : "192.168.10.8:5213", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:02:36.438200", "pkt_num" : 11526, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 188, "dir" : "C2S", "src_ap" : "192.168.10.8:1030", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:05:53.645048", "pkt_num" : 55066, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 188, "dir" : "C2S", "src_ap" : "192.168.10.8:1128", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/07-20:10:52.905716", "pkt_num" : 198930, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 249, "dir" : "C2S", "src_ap" : "192.168.10.15:49537", "dst_ap" : "185.11.128.205:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/07-20:10:53.255489", "pkt_num" : 199279, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 347, "dir" : "C2S", "src_ap" : "192.168.10.15:49537", "dst_ap" : "185.11.128.205:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/07-20:10:53.273123", "pkt_num" : 199291, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 289, "dir" : "C2S", "src_ap" : "192.168.10.15:49561", "dst_ap" : "194.213.62.42:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/07-20:10:58.758175", "pkt_num" : 207515, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 329, "dir" : "C2S", "src_ap" : "192.168.10.15:49537", "dst_ap" : "185.11.128.205:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/07-20:10:58.885371", "pkt_num" : 207606, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 427, "dir" : "C2S", "src_ap" : "192.168.10.15:49537", "dst_ap" : "185.11.128.205:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/08-04:00:44.124505", "pkt_num" : 9990348, "proto" : "TCP", "pkt_gen" : "stream_tcp", "pkt_len" : 1226, "dir" : "C2S", "src_ap" : "192.168.10.25:54199", "dst_ap" : "119.205.194.17:80", "rule" : "1:29957:6", "action" : "allow" }
+{ "timestamp" : "07/08-04:00:50.919773", "pkt_num" : 9992304, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.5:57045", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/08-04:00:58.774805", "pkt_num" : 9993534, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.14:59146", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/08-04:01:08.158541", "pkt_num" : 9994350, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 199, "dir" : "C2S", "src_ap" : "192.168.10.9:10754", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+{ "timestamp" : "07/08-04:02:38.623517", "pkt_num" : 9997737, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 188, "dir" : "C2S", "src_ap" : "192.168.10.8:10414", "dst_ap" : "192.168.10.3:445", "rule" : "1:44486:4", "action" : "allow" }
+-- [0] data/CIC-IDS-2017/Friday-WorkingHours.pcap
+--------------------------------------------------
+Packet Statistics
+--------------------------------------------------
+daq
+                    pcaps: 1
+                 received: 9997874
+                 analyzed: 9997874
+                    allow: 9074129
+                whitelist: 923745
+                 rx_bytes: 5759612059
+           expected_flows: 669
+--------------------------------------------------
+codec
+                    total: 9998068     	(100.000%)
+                    other: 164         	(  0.002%)
+                 discards: 1390455     	( 13.907%)
+                      arp: 46408       	(  0.464%)
+                      eth: 9998068     	(100.000%)
+                      gtp: 4           	(  0.000%)
+                    icmp4: 965         	(  0.010%)
+                 icmp4_ip: 835         	(  0.008%)
+                    icmp6: 1014        	(  0.010%)
+                     igmp: 117         	(  0.001%)
+                     ipv4: 9915874     	( 99.178%)
+                     ipv6: 28507       	(  0.285%)
+            ipv6_hop_opts: 631         	(  0.006%)
+                      llc: 7177        	(  0.072%)
+                      tcp: 7803983     	( 78.055%)
+                      udp: 750104      	(  7.502%)
+--------------------------------------------------
+Module Statistics
+--------------------------------------------------
+ac_bnfa
+                 searches: 12648894
+                  matches: 1533250
+                    bytes: 13756641334
+--------------------------------------------------
+ac_full
+                 searches: 1050097
+                  matches: 9736377
+                    bytes: 92803152
+--------------------------------------------------
+active
+            holds_allowed: 24
+--------------------------------------------------
+appid
+                  packets: 8553930
+        processed_packets: 8543192
+          ignored_packets: 10738
+           total_sessions: 671250
+       service_cache_adds: 143302
+    service_cache_removes: 137061
+             bytes_in_use: 1048488
+             items_in_use: 6241
+--------------------------------------------------
+arp_spoof
+                  packets: 46408
+--------------------------------------------------
+back_orifice
+                  packets: 745271
+--------------------------------------------------
+binder
+              raw_packets: 1451975
+                new_flows: 650310
+          service_changes: 153148
+                 no_match: 6522
+                 inspects: 2102285
+--------------------------------------------------
+dce_smb
+               cache_adds: 390
+             cache_misses: 190
+                cache_max: 44296
+            cache_removes: 77
+                     pdus: 676
+                    binds: 162
+                bind_acks: 162
+                 requests: 176
+                responses: 176
+                 sessions: 382
+                  packets: 3837
+            ignored_bytes: 90425
+ max_outstanding_requests: 1
+                 v2_setup: 296
+        v2_setup_err_resp: 33
+             v2_tree_cnct: 239
+                   v2_crt: 224
+     v2_crt_inv_file_data: 2
+       v2_crt_rtrkr_misng: 196
+           v2_crt_req_ipc: 1
+                   v2_wrt: 2
+                  v2_read: 68
+      v2_read_rtrkr_misng: 54
+                   v2_cls: 86
+   v2_cls_req_ftrkr_misng: 8
+            v2_tree_discn: 213
+    v2_tree_discn_ignored: 1
+                v2_logoff: 116
+      v2_msgs_uninspected: 645
+  max_concurrent_sessions: 20
+      total_smb1_sessions: 200
+      total_smb2_sessions: 182
+        total_mc_sessions: 103
+v2_total_session_trackers: 190
+   v2_total_tree_trackers: 197
+   v2_total_file_trackers: 7
+                 v2_ioctl: 395
+         v2_ioctl_ignored: 16
+--------------------------------------------------
+dce_tcp
+                     pdus: 1348
+                    binds: 134
+                bind_acks: 191
+           alter_contexts: 78
+  alter_context_responses: 89
+                 requests: 428
+                responses: 428
+             tcp_sessions: 174
+    tcp_expected_sessions: 151
+    tcp_expected_realized: 17
+              tcp_packets: 1348
+  max_concurrent_sessions: 28
+--------------------------------------------------
+detection
+                 analyzed: 9997874
+               hard_evals: 521446
+             raw_searches: 7717675
+          cooked_searches: 4382082
+             pkt_searches: 12099757
+             pdu_searches: 441186
+            file_searches: 107951
+                   alerts: 3543
+             total_alerts: 3543
+                   logged: 3543
+              alert_limit: 356
+           cont_creations: 98
+               cont_flows: 82
+               cont_evals: 51
+          cont_mismatches: 51
+             cont_max_num: 3
+                buf_dumps: 6155
+--------------------------------------------------
+dns
+                  packets: 525605
+                 requests: 337603
+                responses: 187990
+  max_concurrent_sessions: 1
+--------------------------------------------------
+file_id
+              total_files: 53050
+          total_file_data: 32406768
+     max_concurrent_files: 1
+--------------------------------------------------
+ftp_data
+                  packets: 102
+--------------------------------------------------
+ftp_server
+            total_packets: 7054
+              total_bytes: 160506
+  max_concurrent_sessions: 17
+     ssl_search_abandoned: 477
+ pkt_segment_size_changed: 24
+flow_segment_size_changed: 8
+--------------------------------------------------
+http_inspect
+                    flows: 98548
+                    scans: 536495
+              reassembles: 426612
+              inspections: 416082
+                 requests: 125820
+                responses: 53487
+             get_requests: 110766
+            head_requests: 43
+            post_requests: 14995
+         options_requests: 16
+           request_bodies: 14959
+                  chunked: 2969
+       uri_normalizations: 7499
+                 uri_path: 217
+               uri_coding: 453
+  max_concurrent_sessions: 14649
+      partial_inspections: 13
+          pipelined_flows: 2538
+       pipelined_requests: 12043
+              total_bytes: 101448307
+          compressed_gzip: 6126
+       compressed_unknown: 4
+--------------------------------------------------
+ips_actions
+                    alert: 3543
+                  file_id: 5030
+--------------------------------------------------
+normalizer
+        test_tcp_trim_win: 17601
+     test_tcp_ecn_session: 85
+          test_tcp_ts_nop: 828
+        test_tcp_ips_data: 583
+           test_tcp_block: 41642
+--------------------------------------------------
+pcre
+         pcre_match_limit: 14
+--------------------------------------------------
+port_scan
+                  packets: 8556637
+                 trackers: 10269
+--------------------------------------------------
+search_engine
+               max_queued: 441
+            total_flushed: 1493927
+            total_inserts: 1533250
+             total_unique: 1493927
+     non_qualified_events: 2006088
+         qualified_events: 9285
+--------------------------------------------------
+ssh
+                  packets: 24948
+              total_bytes: 4625097
+  max_concurrent_sessions: 21
+--------------------------------------------------
+ssl
+                  packets: 333110
+                  decoded: 333110
+             client_hello: 52498
+             server_hello: 47724
+              certificate: 20660
+              server_done: 94852
+      client_key_exchange: 41931
+      server_key_exchange: 15051
+            change_cipher: 80448
+       client_application: 90061
+       server_application: 20981
+                    alert: 21140
+     unrecognized_records: 5611
+     handshakes_completed: 17524
+         sessions_ignored: 17526
+       detection_disabled: 208
+  max_concurrent_sessions: 6204
+--------------------------------------------------
+stream
+                    flows: 650310
+             total_prunes: 166404
+idle_prunes_proto_timeout: 166404
+           expected_flows: 866
+        expected_realized: 125
+        ip_timeout_prunes: 18
+       tcp_timeout_prunes: 33773
+       udp_timeout_prunes: 132553
+      icmp_timeout_prunes: 60
+--------------------------------------------------
+stream_icmp
+                 sessions: 65
+                      max: 65
+                  created: 65
+                 released: 65
+--------------------------------------------------
+stream_ip
+                 sessions: 212
+                      max: 212
+                  created: 215
+                 released: 215
+                 timeouts: 3
+              total_bytes: 313198
+              total_frags: 392
+            current_frags: 194
+              reassembled: 194
+                 overlaps: 2
+                anomalies: 2
+                   alerts: 2
+           trackers_added: 196
+           trackers_freed: 196
+         trackers_cleared: 196
+       trackers_completed: 194
+           nodes_inserted: 392
+            nodes_deleted: 392
+        reassembled_bytes: 313445
+         fragmented_bytes: 324862
+--------------------------------------------------
+stream_tcp
+                 sessions: 329119
+                      max: 329119
+                  created: 329119
+                 released: 339736
+                 timeouts: 7379
+            stale_packets: 499
+             instantiated: 328829
+                   setups: 329119
+                 restarts: 153098
+                   resyns: 10665
+         discards_skipped: 41642
+          invalid_seq_num: 13190
+              invalid_ack: 22
+                   events: 25286
+             syn_trackers: 347613
+         syn_ack_trackers: 1283
+            data_trackers: 1505
+              segs_queued: 2145066
+            segs_released: 2145066
+                segs_used: 2040181
+          rebuilt_packets: 1857276
+          rebuilt_buffers: 6401
+            rebuilt_bytes: 2269662465
+                 overlaps: 597
+                     gaps: 415228
+    payload_fully_trimmed: 580
+          client_cleanups: 46797
+          server_cleanups: 2505
+             initializing: 10665
+              established: 36
+                  closing: 5948
+                     syns: 352955
+                 syn_acks: 189854
+                   resets: 293130
+                     fins: 220857
+             packets_held: 8
+      held_packets_passed: 8
+         max_packets_held: 1
+      inspector_fallbacks: 849
+        partial_fallbacks: 51702
+                 max_segs: 293
+                max_bytes: 427780
+          zero_win_probes: 20
+        keep_alive_probes: 190326
+         full_retransmits: 7
+ flush_on_asymmetric_flow: 704
+         asymmetric_flows: 677
+--------------------------------------------------
+stream_udp
+                 sessions: 320914
+                      max: 320914
+                  created: 325334
+                 released: 325334
+                 timeouts: 4420
+            stale_packets: 2
+              total_bytes: 58442261
+--------------------------------------------------
+tcp
+        bad_tcp4_checksum: 2585
+--------------------------------------------------
+udp
+        bad_udp6_checksum: 122
+--------------------------------------------------
+wizard
+                tcp_scans: 161484
+                 tcp_hits: 153100
+               tcp_misses: 119
+                udp_scans: 132731
+                 udp_hits: 3
+               udp_misses: 132728
+--------------------------------------------------
+Appid Statistics
+--------------------------------------------------
+detected apps and services
+              Application: Services   Clients    Users      Payloads   Misc       Referred  
+                   amazon: 0          0          0          5          0          0         
+             apple_update: 0          0          0          2          0          0         
+                     bing: 0          0          0          83         0          0         
+                     bits: 0          31         0          0          0          0         
+            citrix_online: 0          0          0          6          0          0         
+                   dhcpv6: 416        0          0          0          0          0         
+                     digg: 0          0          0          15         0          0         
+                  dropbox: 0          0          0          121        0          0         
+                     ebay: 0          0          0          50         0          0         
+                      ftp: 1          0          0          0          0          0         
+                 ftp_data: 44         0          0          0          0          0         
+              google_apis: 0          0          0          501        0          0         
+                   google: 0          0          0          3554       0          0         
+                 kftpdata: 1          0          0          0          0          0         
+                      msn: 0          0          0          102        0          0         
+                       qq: 0          0          0          16         0          0         
+          sap_hostcontrol: 0          0          0          7          0          0         
+                   tumblr: 0          0          0          6          0          0         
+                wikipedia: 0          0          0          2          0          0         
+             windows_live: 0          0          0          3          0          0         
+                wordpress: 0          0          0          51         0          0         
+                   yahoo!: 0          0          0          296        0          0         
+           adobe_software: 0          0          0          4          0          0         
+                    argos: 0          0          0          27         0          0         
+           autotrader.com: 0          0          0          2          0          0         
+                  blogger: 0          0          0          58         0          0         
+                     citi: 0          0          0          17         0          0         
+                  dce/rpc: 106        5          0          0          0          0         
+                      dns: 314650     191026     0          0          0          0         
+              edmunds.com: 0          0          0          1          0          0         
+                  expedia: 0          0          0          4          0          0         
+                 facebook: 0          0          0          857        0          2         
+                  firefox: 0          19895      0          0          0          0         
+                 gamestop: 0          0          0          4          0          0         
+                   gawker: 0          0          0          5          0          0         
+                    gmail: 0          0          0          276        0          0         
+         google_analytics: 0          0          0          771        0          0         
+              google_news: 0          0          0          29         0          0         
+      google_safebrowsing: 0          0          0          171        0          0         
+                     hsbc: 0          0          0          5          0          0         
+                     http: 97367      0          0          0          0          0         
+                    imgur: 0          0          0          46         0          0         
+        internet_explorer: 0          3          0          0          0          0         
+                   itunes: 0          0          0          2          0          0         
+                 jalopnik: 0          0          0          150        0          0         
+                 kerberos: 616        515        0          0          0          0         
+                    kmart: 0          0          0          59         0          0         
+               kongregate: 0          0          0          14         0          0         
+                launchpad: 0          0          0          6          0          0         
+                     ldap: 501        0          46         0          0          0         
+                 linkedin: 0          0          0          76         0          0         
+                 manolito: 2          2          0          0          0          0         
+         microsoft_update: 0          0          0          87         0          0         
+              netbios-dgm: 314        314        0          0          0          0         
+               netbios-ns: 1028       881        0          0          0          0         
+        netbios-ssn_(smb): 37         0          0          0          0          0         
+                  newsnow: 0          0          0          1          0          0         
+                 newsvine: 0          0          0          10         0          4         
+                      ntp: 5062       0          0          0          0          0         
+             office_depot: 0          0          0          53         0          0         
+                      rei: 0          0          0          8          0          0         
+                   renren: 0          0          0          4          0          0         
+                   safari: 0          1176       0          0          0          0         
+               sam's_club: 0          0          0          4          0          0         
+               schuelervz: 0          0          0          25         0          0         
+                   schwab: 0          0          0          12         0          0         
+                    sears: 0          0          0          7          0          0         
+                shockwave: 0          0          0          9          0          0         
+                    squid: 0          0          0          41         0          0         
+                      ssh: 980        980        0          0          0          0         
+                      ssl: 4          0          0          0          0          0         
+              stayfriends: 0          0          0          2          0          0         
+                  stubhub: 0          0          0          18         0          0         
+                     stun: 29         0          0          0          0          0         
+              travelocity: 0          0          0          14         0          0         
+              tripadvisor: 0          0          0          6          0          0         
+                  twitter: 0          0          0          396        0          11        
+         urban_outfitters: 0          0          0          11         0          0         
+                 vanguard: 0          0          0          7          0          0         
+        victoria's_secret: 0          0          0          14         0          0         
+                    vimeo: 0          0          0          1          0          0         
+         voyages-sncf.com: 0          0          0          50         0          0         
+                  walmart: 0          0          0          16         0          0         
+                     xing: 0          0          0          11         0          0         
+                  youtube: 0          0          0          133        0          2         
+           salesforce.com: 0          0          0          3          0          0         
+              iheartradio: 0          0          0          7          0          0         
+                vkontakte: 0          0          0          15         0          0         
+                   rutube: 0          0          0          58         0          0         
+                  twitpic: 0          0          0          72         0          0         
+                   tagged: 0          0          0          13         0          0         
+                tesco.com: 0          0          0          11         0          0         
+  advanced_packaging_tool: 0          24         0          0          0          0         
+           windows_update: 0          14         0          0          0          0         
+                    smtps: 316        0          0          0          0          0         
+                    https: 33665      0          0          0          0          0         
+                   paypal: 0          0          0          2          0          0         
+                pinterest: 0          32         0          47         0          0         
+                 torrentz: 0          0          0          2          0          0         
+                  typepad: 0          0          0          11         0          0         
+                about.com: 0          0          0          6          0          0         
+              apple_sites: 0          0          0          7          0          0         
+                 nbc_news: 0          0          0          115        0          0         
+                instagram: 0          4          0          1          0          0         
+                  mozilla: 0          0          0          199        0          0         
+           facebook_video: 0          0          0          2          0          0         
+               ssl_client: 0          17141      0          0          0          0         
+     twitter_link_service: 0          0          0          85         0          0         
+                   go.com: 0          0          0          7          0          0         
+               ad_advisor: 0          0          0          36         0          0         
+                    naver: 0          0          0          20         0          0         
+              doubleclick: 0          0          0          2677       0          139       
+                 ad_nexus: 0          0          0          438        0          15        
+                 pubmatic: 0          0          0          595        0          82        
+                      cbs: 0          0          0          56         0          0         
+                    baidu: 0          0          0          41         0          0         
+                     zedo: 0          0          0          15         0          0         
+                     espn: 0          0          0          12         0          0         
+                 outbrain: 0          0          0          119        0          1         
+      the_huffington_post: 0          0          0          1          0          0         
+                    optmd: 0          0          0          43         0          0         
+                  godaddy: 0          0          0          1205       0          0         
+                      bbc: 0          0          0          1          0          0         
+                   indeed: 0          0          0          3          0          0         
+                     at&t: 0          0          0          24         0          0         
+               roadrunner: 0          0          0          2          0          0         
+               daily_mail: 0          0          0          1          0          0         
+      amazon_web_services: 0          0          0          208        0          0         
+               cloudfront: 0          0          0          185        0          9         
+                   taobao: 0          0          0          8          0          0         
+                      ted: 0          0          0          2          0          0         
+    ubuntu_update_manager: 0          0          0          8          0          0         
+                     nasa: 0          0          0          4          0          0         
+                      aol: 0          0          0          1          0          0         
+                microsoft: 0          0          0          465        0          0         
+           google_adsense: 0          0          0          820        0          104       
+               nokia_maps: 0          0          0          6          0          0         
+       sports_illustrated: 0          0          0          4          0          0         
+                 verisign: 0          0          0          3          0          0         
+                chartbeat: 0          0          0          173        0          13        
+           insightexpress: 0          0          0          5          0          0         
+                    wikia: 0          0          0          2          0          0         
+           stack_overflow: 0          0          0          19         0          0         
+                     mgid: 0          0          0          5          0          0         
+                   disney: 0          0          0          16         0          0         
+                  addthis: 0          0          0          152        0          30        
+              statcounter: 0          0          0          6          0          0         
+                the_blaze: 0          0          0          5          0          0         
+                hostgator: 0          0          0          8          0          0         
+                      cox: 0          0          0          1          0          0         
+                   sprint: 0          0          0          3          0          0         
+           livestrong.com: 0          0          0          1          0          0         
+        realclearpolitics: 0          0          0          5          0          0         
+               shutterfly: 0          0          0          5          0          0         
+                  mail.ru: 0          0          0          51         0          0         
+                   disqus: 0          0          0          85         0          0         
+             imrworldwide: 0          0          0          103        0          11        
+              square_inc.: 0          0          0          6          0          0         
+              java_update: 0          1          0          0          0          0         
+                   yandex: 0          0          0          148        0          0         
+                   adcash: 0          0          0          2          0          0         
+             yieldmanager: 0          0          0          5          0          9         
+                      uol: 0          0          0          145        0          0         
+               aliexpress: 0          0          0          2          0          0         
+                  rakuten: 0          0          0          6          0          0         
+                    500px: 0          2          0          0          0          0         
+                   akamai: 0          0          0          139        0          2         
+                   github: 0          0          0          38         0          0         
+                     java: 0          9          0          0          0          0         
+                 gravatar: 0          0          0          19         0          0         
+                     mdns: 264        0          0          0          0          0         
+                   truste: 0          0          0          66         0          0         
+             doubleverify: 0          0          0          110        0          47        
+                 exchange: 0          6          0          0          0          0         
+                  bizrate: 0          0          0          5          0          0         
+                 thechive: 0          0          0          2          0          0         
+                  zergnet: 0          0          0          48         0          0         
+               liveperson: 0          0          0          30         0          0         
+        amazon_ads_system: 0          0          0          68         0          23        
+                   pubnub: 0          0          0          2          0          0         
+                   redbox: 0          0          0          4          0          0         
+                      nbc: 0          0          0          1          0          0         
+                   ubuntu: 0          0          0          712        0          0         
+                wired.com: 0          0          0          11         0          0         
+                  nhl.com: 0          0          0          6          0          0         
+               brightcove: 0          0          0          21         0          7         
+                simpli.fi: 0          0          0          37         0          1         
+                   splunk: 0          0          0          2          0          0         
+                      fox: 0          0          0          2          0          0         
+         washington_times: 0          0          0          59         0          0         
+         associated_press: 0          0          0          13         0          0         
+                    po.st: 0          0          0          4          0          0         
+                   ooyala: 0          0          0          11         0          0         
+             friendfinder: 0          0          0          6          0          0         
+          microsoft_azure: 0          0          0          21         0          0         
+                starbucks: 0          1          0          1          0          0         
+                  smugmug: 0          0          0          7          0          0         
+                ensighten: 0          0          0          8          0          2         
+                maxymiser: 0          0          0          4          0          0         
+                   nuance: 0          0          0          18         0          0         
+               al_jazeera: 0          0          0          2          0          0         
+                wimbledon: 0          0          0          16         0          0         
+             de_telegraaf: 0          0          0          49         0          0         
+      microsoft_cryptoapi: 0          50         0          0          0          0         
+                    ocspd: 0          24         0          0          0          0         
+             apple_pubsub: 0          15         0          0          0          0         
+             oracle_sites: 0          0          0          1          0          0         
+   the_hollywood_reporter: 0          0          0          301        0          0         
+                  adap.tv: 0          0          0          28         0          2         
+                drugs.com: 0          0          0          1          0          0         
+           microsoft_ncsi: 0          1          0          1          0          0         
+            microsoft_wns: 0          221        0          0          0          0         
+                     hupu: 0          0          0          2          0          0         
+                  groupon: 0          0          0          5          0          0         
+                  nfl.com: 0          0          0          381        0          0         
+                17173.com: 0          0          0          27         0          0         
+                    tmall: 0          0          0          6          0          0         
+               google_ads: 0          0          0          188        0          0         
+            richrelevance: 0          0          0          8          0          0         
+       scorecard_research: 0          0          0          234        0          0         
+                    openx: 0          0          0          3          0          0         
+          rubicon_project: 0          0          0          532        0          0         
+                 33across: 0          0          0          18         0          0         
+          improve_digital: 0          0          0          16         0          0         
+                  bluekai: 0          0          0          235        0          0         
+             iperceptions: 0          0          0          3          0          0         
+   atlas_advertiser_suite: 0          0          0          96         0          0         
+                 comscore: 0          0          0          2          0          0         
+               east_money: 0          0          0          1          0          0         
+               freelancer: 0          0          0          77         0          0         
+                 monetate: 0          0          0          14         0          0         
+                   adgear: 0          0          0          26         0          0         
+                   casale: 0          0          0          306        0          0         
+                   chango: 0          0          0          3          0          0         
+                   criteo: 0          0          0          587        0          0         
+                  exelate: 0          0          0          96         0          0         
+  exponential_interactive: 0          0          0          11         0          0         
+            media6degrees: 0          0          0          27         0          0         
+                eyereturn: 0          0          0          38         0          0         
+               optimizely: 0          0          0          127        0          0         
+               proclivity: 0          0          0          9          0          0         
+                tubemogul: 0          0          0          44         0          0         
+               cloudflare: 0          0          0          100        0          0         
+                   eq_ads: 0          0          0          9          0          0         
+              spotxchange: 0          0          0          47         0          0         
+                  netseer: 0          0          0          31         0          0         
+               engage_bdr: 0          0          0          4          0          0         
+                     bizo: 0          0          0          15         0          0         
+           smart_adserver: 0          0          0          133        0          0         
+               contextweb: 0          0          0          172        0          0         
+                   cxense: 0          0          0          32         0          0         
+                undertone: 0          0          0          3          0          0         
+                voicefive: 0          0          0          1          0          0         
+                webtrends: 0          0          0          11         0          0         
+            crowd_science: 0          0          0          1          0          0         
+                 mixpanel: 0          0          0          16         0          0         
+                     cnzz: 0          0          0          10         0          0         
+                  rambler: 0          0          0          3          0          0         
+                sharethis: 0          0          0          1          0          0         
+     google_url_shortener: 0          0          0          3          0          0         
+                    lijit: 0          0          0          87         0          0         
+                     moat: 0          0          0          266        0          2         
+            hideman_login: 0          0          0          3          0          0         
+            python_urllib: 0          3          0          0          0          0         
+                new_relic: 0          0          0          20         0          0         
+                 ea_games: 0          0          0          29         0          0         
+                 bandcamp: 0          0          0          6          0          0         
+                 bluehost: 0          0          0          14         0          0         
+                 time.com: 0          0          0          1          0          0         
+                    bitly: 0          0          0          4          0          0         
+               office_365: 0          0          0          117        0          0         
+        sharepoint_online: 0          0          0          32         0          0         
+             pastebin.com: 0          0          0          2          0          0         
+          adobe_analytics: 0          0          0          63         0          0         
+                   adroll: 0          0          0          109        0          0         
+               hao123.com: 0          0          0          8          0          0         
+                   istock: 0          0          0          85         0          0         
+              motley_fool: 0          0          0          2          0          0         
+                sitescout: 0          0          0          49         0          0         
+         dropbox_download: 0          0          0          19         0          0         
+microsoft_windows_live_se: 0          0          0          15         0          0         
+                    epmap: 0          84         0          0          0          0         
+             ibm_director: 1          0          0          0          0          0         
+ microsoft_global_catalog: 255        0          0          0          0          0         
+     netop_remote_control: 1          0          0          0          0          0         
+                     icmp: 38         0          0          0          29         0         
+            icmp_for_ipv6: 27         0          0          0          11         0         
+              news.com.au: 0          0          0          2          0          0         
+                   ad4mat: 0          0          0          14         0          0         
+                  cedexis: 0          0          0          22         0          0         
+                  ligatus: 0          0          0          95         0          0         
+                 weborama: 0          0          0          12         0          0         
+                     xiti: 0          0          0          180        0          0         
+                    zanox: 0          0          0          15         0          0         
+                 onedrive: 0          0          0          2          0          0         
+        linkedin_contacts: 0          0          0          11         0          0         
+                 t-online: 0          0          0          2          0          0         
+            bootstrap_cdn: 0          0          0          2          0          0         
+                     igmp: 17         0          0          0          0          0         
+                ad_master: 0          0          0          4          0          0         
+                  ad_tech: 0          0          0          176        0          0         
+                      itv: 0          0          0          16         0          0         
+               demandbase: 0          0          0          16         0          0         
+                  marketo: 0          0          0          11         0          0         
+                 docusign: 0          0          0          9          0          0         
+               inspectlet: 0          0          0          3          0          0         
+  microsoft_visual_studio: 0          0          0          3          0          0         
+                periscope: 0          4          0          2          0          0         
+              ftp_passive: 0          0          0          1          0          0         
+                     sway: 0          0          0          2          0          0         
+            office_mobile: 0          0          0          77         0          0         
+            flightradar24: 0          0          0          3          0          0         
+                    avito: 0          0          0          6          0          0         
+                  quizlet: 0          0          0          3          0          0         
+               naukri.com: 0          0          0          4          0          0         
+                  onclick: 0          0          0          13         0          0         
+                  freepik: 0          0          0          2          0          0         
+                  hubspot: 0          0          0          2          0          0         
+                  taboola: 0          0          0          166        0          0         
+                 digikala: 0          0          0          2          0          0         
+                dingit.tv: 0          0          0          11         0          0         
+                 exoclick: 0          0          0          8          0          0         
+                 uptodown: 0          0          0          6          0          0         
+         wirtualna_polska: 0          0          0          5          0          0         
+           google_sign_in: 0          0          0          95         0          0         
+                   xiaomi: 0          0          0          3          0          0         
+                  plex_tv: 0          25         0          20         0          0         
+                u.s_state: 0          0          0          5          0          0         
+               cloudinary: 0          0          0          16         0          0         
+             font_awesome: 0          0          0          1          0          0         
+                grammarly: 0          0          0          2          0          0         
+              adobe_fonts: 0          0          0          25         0          0         
+                departapp: 0          0          0          4          0          0         
+              disney_plus: 0          0          0          3          0          0         
+          instagram_media: 0          0          0          19         0          0         
+           firefox_update: 0          0          0          3          0          0         
+                     enip: 1          0          0          0          0          0         
+                  unknown: 109806     0          0          103053     0          0         
+--------------------------------------------------
+File Statistics
+--------------------------------------------------
+file stats
+                     Type TypeDn     TypeUp     BytesDn    BytesUp   
+                MSCAB(26) 4          0          0          0         
+                  SWF(52) 6          0          0          0         
+                  GIF(62) 63         0          0          0         
+                  GIF(63) 4075       0          0          0         
+                  PNG(69) 544        0          0          0         
+                 JPEG(70) 247        0          0          0         
+                 M3U(109) 1          0          0          0         
+                 ICO(149) 18         0          0          0         
+                JPEG(157) 40         0          0          0         
+                 REG(307) 1          0          0          0         
+                  VB(310) 31         0          0          0         
+                    Total 5030       0          0          0         
+--------------------------------------------------
+Summary Statistics
+--------------------------------------------------
+timing
+                  runtime: 00:01:53
+                  seconds: 113.194388
+                 pkts/sec: 88325
+                Mbits/sec: 407
+--------------------------------------------------
+module profile (all, sorted by total_time)
+#                      module layer               checks             time(us)            avg/check  %/caller  %/total
+=                      ====== =====               ======             ========            =========  ========  =======
+ 1                       mpse     1             28832967             56259056                    1     49.81    49.81
+ 2                    ac_bnfa     1             12648894             50042945                    3     44.31    44.31
+ 3                 stream_tcp     1              6884620             33688109                    4     29.83    29.83
+ 4                      appid     1              8553931              9929378                    1      8.79     8.79
+ 5               http_inspect     1              1963905              5408274                    2      4.79     4.79
+ 6                     decode     1              9998068              4584826                    0      4.06     4.06
+ 7                     stream     1              8553930              4376728                    0      3.88     3.88
+ 8                        daq     1             10154092              2564461                    0      2.27     2.27
+ 9                  rule_eval     1              9365990              2346448                    0      2.08     2.08
+ 10                 port_scan     1              8556637              1275893                    0      1.13     1.13
+ 11                    binder     1              2255433              1042364                    0      0.92     0.92
+ 12                       dns     1               525605               797800                    1      0.71     0.71
+ 13                normalizer     1              8553736               794888                    0      0.70     0.70
+ 14                       ssl     1               333110               786500                    2      0.70     0.70
+ 15                       paf     1              2658149               545493                    0      0.48     0.48
+ 16                    eventq     1             14254113               386169                    0      0.34     0.34
+ 17                   file_id     1                53116               347140                    6      0.31     0.31
+ 18                stream_udp     1               749982               275522                    0      0.24     0.24
+ 19                    wizard     1               294480               219122                    0      0.19     0.19
+ 20              back_orifice     1               749979                58941                    0      0.05     0.05
+ 21                   dce_smb     1                 6499                48861                    7      0.04     0.04
+ 22                ftp_server     1                 7054                18419                    2      0.02     0.02
+ 23                       ssh     1                24948                10413                    0      0.01     0.01
+ 24                   dce_tcp     1                 1348                 9016                    6      0.01     0.01
+ 25                 arp_spoof     1                46408                 4173                    0      0.00     0.00
+ 26                 stream_ip     1                  571                 3059                    5      0.00     0.00
+ 27                  ftp_data     1                  102                 1083                   10      0.00     0.00
+ 28                     other     1              9997874                    0                    0      0.00     0.00
+--                      total    --              9997874            112947406                   11        --   155.67
+--------------------------------------------------
+rule profile (all, sorted by total_time)
+#       gid   sid rev    checks matches alerts time (us) avg/check avg/match avg/non-match timeouts suspends rule_time (%)
+=       ===   === ===    ====== ======= ====== ========= ========= ========= ============= ======== ======== =============
+1         1 15167  13    560486      28     28    367102         0         3             0        0        0       0.32431
+2         1 47821   2    122820       0      0    242756         1         0             1        0        0       0.21446
+3         1  5684   6    319992       0      0    223589         0         0             0        0        0       0.19753
+4         1 43587   5     50233       0      0    125155         2         0             2        0        0       0.11057
+5         1 13949  17    518730       0      0    123406         0         0             0        0        0       0.10902
+6         1300150   1     23865       0      0    120226         5         0             5        0        0       0.10621
+7         1 41789   2    120021       0      0     95125         0         0             0        0        0       0.08404
+8         1 33669   2    378244       0      0     83068         0         0             0        0        0       0.07339
+9         1 20242  11     48145       0      0     75788         1         0             1        0        0       0.06695
+10        1 29957   6     29314    3073   3073     58183         1         8             1        0        0       0.05140
+11        1 41905   1     58925       0      0     55684         0         0             0        0        0       0.04919
+12        1 17487  15      2044       0      0     35339        17         0            12        0        0       0.03122
+13        1 33785   6     12008       0      0     33572         2         0             2        0        0       0.02966
+14        1 27144   3     14732       0      0     25205         1         0             1        0        0       0.02227
+15        1 15225  14     10148       0      0     18185         1         0             1        0        0       0.01607
+16        1 44718   2     31980       0      0     16605         0         0             0        0        0       0.01467
+17        1 40136   3      3377       0      0     14641         4         0             4        0        0       0.01293
+18        1 17603  10      3211       0      0     10133         3         0             3        0        0       0.00895
+19        1 16762   5      8152       0      0      8128         0         0             0        0        0       0.00718
+20        1  3045   4      4483       0      0      7886         1         0             1        0        0       0.00697
+21        1 29667   4      2407       0      0      7538         3         0             3        0        0       0.00666
+22        4    57   1      4083    4075      0      7055         1         1             0        0        0       0.00623
+23        1 41499   6      5136       0      0      6084         1         0             1        0        0       0.00537
+24        1 30131   2      1984       0      0      4974         2         0             2        0        0       0.00439
+25        1 20445  13     15057       0      0      4945         0         0             0        0        0       0.00437
+26        1 23838  12      2646       0      0      4659         1         0             1        0        0       0.00412
+27        1 39875   3      3060       0      0      3492         1         0             1        0        0       0.00308
+28        4   112   1      3165       0      0      2676         0         0             0        0        0       0.00236
+29        1 35438   5       787       0      0      2576         3         0             3        0        0       0.00228
+30        1 20619   6      3881       3      3      2473         0        14             0        0        0       0.00218
+31        1  1972  32       954       0      0      1937         2         0             2        0        0       0.00171
+32        1 21112  15      5388       0      0      1914         0         0             0        0        0       0.00169
+33        4   129   1      4030      18      0      1901         0         2             0        0        0       0.00168
+34        1 40194   2       160       0      0      1524         9         0             9        0        0       0.00135
+35        4   191   1       958       0      0      1441         1         0             1        0        0       0.00127
+36        4   190   1       958       0      0      1406         1         0             1        0        0       0.00124
+37        4    14   1       958       0      0      1399         1         0             1        0        0       0.00124
+38        1  5771   5      7988       0      0      1394         0         0             0        0        0       0.00123
+39        4   192   1       958       0      0      1393         1         0             1        0        0       0.00123
+40        1 29754   5       255       0      0      1393         5         0             5        0        0       0.00123
+41        4    15   1       958       0      0      1392         1         0             1        0        0       0.00123
+42        4    50   1      1353       0      0      1198         0         0             0        0        0       0.00106
+43        1 44486   4       890     890    178      1129         1         1             0        0        0       0.00100
+44        1 59653   1       264       0      0      1065         4         0             4        0        0       0.00094
+45        4    63   1       544     544      0       969         1         1             0        0        0       0.00086
+46        1 51127   3       290      96     96       941         3         8             0        0        0       0.00083
+47        1 39005   3        70       0      0       895        12         0            10        0        0       0.00079
+48        4   172   1      1061       0      0       864         0         0             0        0        0       0.00076
+49        4   166   1      1061       0      0       864         0         0             0        0        0       0.00076
+50        4   171   1      1061       0      0       864         0         0             0        0        0       0.00076
+51        4   173   1      1061       0      0       864         0         0             0        0        0       0.00076
+52        4   167   1      1061       0      0       864         0         0             0        0        0       0.00076
+53        4   170   1      1061       0      0       864         0         0             0        0        0       0.00076
+54        4   169   1      1061       0      0       864         0         0             0        0        0       0.00076
+55        4   168   1      1061       0      0       864         0         0             0        0        0       0.00076
+56        1 16008  18      2588       0      0       799         0         0             0        0        0       0.00071
+57        1 19053   6       270       0      0       696         2         0             2        0        0       0.00061
+58        4    36   1       960       0      0       681         0         0             0        0        0       0.00060
+59        1 38251   2       133       0      0       676         5         0             5        0        0       0.00060
+60        1 16414  14        36       0      0       609        16         0            16        0        0       0.00054
+61        4   128   1       784       0      0       583         0         0             0        0        0       0.00052
+62        4   179   1       805       0      0       553         0         0             0        0        0       0.00049
+63        4   194   1       805       0      0       553         0         0             0        0        0       0.00049
+64        4   176   1       805       0      0       553         0         0             0        0        0       0.00049
+65        4   177   1       805       0      0       553         0         0             0        0        0       0.00049
+66        4   178   1       805       0      0       553         0         0             0        0        0       0.00049
+67        4   174   1       805       0      0       553         0         0             0        0        0       0.00049
+68        4   180   1       805       0      0       553         0         0             0        0        0       0.00049
+69        4   175   1       805       0      0       553         0         0             0        0        0       0.00049
+70        1 38483   3        29       0      0       527        18         0            18        0        0       0.00047
+71        4    64   1       250     247      0       484         1         1             0        0        0       0.00043
+72        1 18473   4      1979       0      0       456         0         0             0        0        0       0.00040
+73        1 27666   3       340       0      0       434         1         0             1        0        0       0.00038
+74        1 50518   2        59       0      0       406         6         0             6        0        0       0.00036
+75        1 20213   5        76       0      0       385         5         0             5        0        0       0.00034
+76        4    16   1       557       0      0       379         0         0             0        0        0       0.00033
+77        1 24911   6       993       0      0       377         0         0             0        0        0       0.00033
+78        1 13514  17       213       0      0       361         1         0             1        0        0       0.00032
+79        4   218   1       368       0      0       343         0         0             0        0        0       0.00030
+80        1 22011   6       311       0      0       341         1         0             1        0        0       0.00030
+81        1 42340   4       916       0      0       313         0         0             0        0        0       0.00028
+82        1 19807  10       352       0      0       293         0         0             0        0        0       0.00026
+83        1300034   1        34       0      0       285         8         0             8        0        0       0.00025
+84        1  2552   8       302       0      0       284         0         0             0        0        0       0.00025
+85        1 16501  10       206       0      0       267         1         0             1        0        0       0.00024
+86        1 35119   2        23       0      0       255        11         0            11        0        0       0.00023
+87        1 41383   2        28       0      0       251         8         0             8        0        0       0.00022
+88        1  3132  15       546       0      0       241         0         0             0        0        0       0.00021
+89        1 33495   2        17       0      0       227        13         0            13        0        0       0.00020
+90        4   181   1       293       1      0       209         0         2             0        0        0       0.00018
+91        4    49   1       188       0      0       200         1         0             1        0        0       0.00018
+92        1 12934  14       135       0      0       194         1         0             1        0        0       0.00017
+93        1  1421  19       160     160    160       188         1         1             0        0        0       0.00017
+94        1 20503  20       165       0      0       188         1         0             1        0        0       0.00017
+95        1 57797   1        20       0      0       181         9         0             9        0        0       0.00016
+96        1 14645  18        16       0      0       180        11         0            11        0        0       0.00016
+97        4   183   1       242      31      0       175         0         2             0        0        0       0.00015
+98        1 42369   6        91       0      0       174         1         0             1        0        0       0.00015
+99        1 24302   4      1979       0      0       161         0         0             0        0        0       0.00014
+100       1 24099   4        50       0      0       156         3         0             2        0        0       0.00014
+101       1  6699  19       547       0      0       146         0         0             0        0        0       0.00013
+102       1 42862   3        88       0      0       145         1         0             1        0        0       0.00013
+103       4    39   1       242       0      0       144         0         0             0        0        0       0.00013
+104       4     4   1       111       0      0       143         1         0             1        0        0       0.00013
+105       1 29435   3       355       0      0       141         0         0             0        0        0       0.00012
+106       1   406   9      1979       0      0       140         0         0             0        0        0       0.00012
+107       4    56   1        64      63      0       127         1         2             0        0        0       0.00011
+108       1  7714   6       106       0      0       119         1         0             1        0        0       0.00011
+109       4   154   1       122       0      0       114         0         0             0        0        0       0.00010
+110       1 52606   1         9       0      0       108        12         0            12        0        0       0.00010
+111       4   137   1        40      40      0       104         2         2             0        0        0       0.00009
+112       1 57130   1        21       0      0       102         4         0             4        0        0       0.00009
+113       1 17429  16       151       0      0        94         0         0             0        0        0       0.00008
+114       4   138   1        73       0      0        92         1         0             1        0        0       0.00008
+115       1 32161   3         5       0      0        87        17         0            17        0        0       0.00008
+116       4   139   1        92       0      0        87         0         0             0        0        0       0.00008
+117       1 48575   1        16       0      0        86         5         0             5        0        0       0.00008
+118       4    89   1        59       0      0        64         1         0             1        0        0       0.00006
+119       4   143   1        51       0      0        53         1         0             1        0        0       0.00005
+120       4    51   1        50       0      0        50         1         0             1        0        0       0.00004
+121       1 32364   5        13       0      0        46         3         0             3        0        0       0.00004
+122       4    59   1        66       0      0        46         0         0             0        0        0       0.00004
+123       1  2697   4       229       0      0        45         0         0             0        0        0       0.00004
+124       1 26883   5         3       0      0        42        14         0            14        0        0       0.00004
+125       1 37961   2         9       4      4        36         4         7             1        0        0       0.00003
+126       4    73   1        35       0      0        36         1         0             1        0        0       0.00003
+127       1  2523  15       320       0      0        36         0         0             0        0        0       0.00003
+128       1 44196   2         3       0      0        34        11         0            11        0        0       0.00003
+129       4    88   1        39       0      0        32         0         0             0        0        0       0.00003
+130       4   144   1        28       0      0        31         1         0             1        0        0       0.00003
+131       1 24360   5        82       0      0        30         0         0             0        0        0       0.00003
+132       4   195   1        28       0      0        28         1         0             1        0        0       0.00002
+133       1 27608   3         4       0      0        25         6         0             6        0        0       0.00002
+134       1 52287   4       160       0      0        24         0         0             0        0        0       0.00002
+135       4   103   1        34       0      0        24         0         0             0        0        0       0.00002
+136       4    58   1        35       0      0        21         0         0             0        0        0       0.00002
+137       1 31204   3         6       0      0        21         3         0             3        0        0       0.00002
+138       1 41064   4        12       0      0        20         1         0             1        0        0       0.00002
+139       1 36946   2         1       0      0        19        19         0            19        0        0       0.00002
+140       1 48894   3         2       1      1        18         9        13             5        0        0       0.00002
+141       4    48   1        25       0      0        16         0         0             0        0        0       0.00001
+142       1 21460   4        10       0      0        16         1         0             1        0        0       0.00001
+143       1 52171   1        12       0      0        16         1         0             1        0        0       0.00001
+144       1 52200   1        12       0      0        16         1         0             1        0        0       0.00001
+145       1 43326   2         8       0      0        16         2         0             2        0        0       0.00001
+146       4    47   1         6       6      0        15         2         2             0        0        0       0.00001
+147       1 64728   1        90       0      0        14         0         0             0        0        0       0.00001
+148       1 38541   3         3       0      0        13         4         0             4        0        0       0.00001
+149       4   219   1        11       0      0        11         1         0             1        0        0       0.00001
+150       1 39266   2        18       0      0        10         0         0             0        0        0       0.00001
+151       4    21   1         4       4      0         9         2         2             0        0        0       0.00001
+152       4    27   1        11       0      0         9         0         0             0        0        0       0.00001
+153       4   201   1         6       0      0         7         1         0             1        0        0       0.00001
+154       4    90   1         4       0      0         6         1         0             1        0        0       0.00001
+155       4   220   1         5       0      0         5         1         0             1        0        0       0.00000
+156       4    19   1         4       0      0         4         1         0             1        0        0       0.00000
+157       4     6   1         4       0      0         4         1         0             1        0        0       0.00000
+158       1 20010   4        37       0      0         4         0         0             0        0        0       0.00000
+159       4    68   1         5       0      0         4         0         0             0        0        0       0.00000
+160       4    78   1         3       0      0         4         1         0             1        0        0       0.00000
+161       1 57681   1         2       0      0         3         1         0             1        0        0       0.00000
+162       1 13920  17         5       0      0         3         0         0             0        0        0       0.00000
+163       4    28   1         3       0      0         2         0         0             0        0        0       0.00000
+164       1 46023   1         1       0      0         2         2         0             2        0        0       0.00000
+165       4   115   1         2       0      0         2         1         0             1        0        0       0.00000
+166       1 35525   4         3       0      0         2         0         0             0        0        0       0.00000
+167       4   100   1         1       1      0         2         2         2             0        0        0       0.00000
+168       1 41528   4        21       0      0         2         0         0             0        0        0       0.00000
+169       4    72   1         3       0      0         1         0         0             0        0        0       0.00000
+170       4   211   1         2       0      0         1         0         0             0        0        0       0.00000
+171       1 37642   3         1       0      0         1         1         0             1        0        0       0.00000
+172       4     9   1         2       0      0         1         0         0             0        0        0       0.00000
+173       4   127   1         2       0      0         1         0         0             0        0        0       0.00000
+174       1  2030  12         1       0      0         1         1         0             1        0        0       0.00000
+175       1 48169   2         2       0      0         1         0         0             0        0        0       0.00000
+176       4   153   1         1       0      0         1         1         0             1        0        0       0.00000
+177       1 28594   2         1       0      0         1         1         0             1        0        0       0.00000
+178       4    52   1         1       0      0         1         1         0             1        0        0       0.00000
+179       1 21663  11         7       0      0         1         0         0             0        0        0       0.00000
+180       4    85   1         1       0      0         1         1         0             1        0        0       0.00000
+181       4    70   1         1       0      0         1         1         0             1        0        0       0.00000
+182       1 40484   3         2       0      0         1         0         0             0        0        0       0.00000
+183       4     8   1         1       0      0         1         1         0             1        0        0       0.00000
+184       1 20271   5         2       0      0         1         0         0             0        0        0       0.00000
+185       4   223   1         1       0      0         0         0         0             0        0        0       0.00000
+186       1 42224   2         1       0      0         0         0         0             0        0        0       0.00000
+187       1 13891  10         1       0      0         0         0         0             0        0        0       0.00000
+188       1  2320   7         1       0      0         0         0         0             0        0        0       0.00000
+189       1 60059   1         1       0      0         0         0         0             0        0        0       0.00000
+o")~   Snort exiting
+AppId Performance Statistics (top 100 appids)
+===================================================================================================================================================
+ AppId   App Name                   Usecs       Pkts     AvgUsecs/Pkt     Sessions     AvgUsecs/Sess     MaxPkts/Sess     MaxUsecs/Sess     %/Total
+---------------------------------------------------------------------------------------------------------------------------------------------------
+  4003   FTP Passive                  322        455                0            1               322              455               322        0.00
+   165   FTP                          322        455                0            1               322              455               322        0.00
+    60   BITS                       5,664  2,196,115                0           31               182        1,827,008             4,229        0.08
+   824   Shockwave                  1,329        731                1            9               147               94               179        0.02
+   653   unknown                      137      3,892                0            1               137            3,892               137        0.00
+  3739   T-Online                     238        133                1            2               119               68               126        0.00
+   731   Microsoft Updat            8,260  2,163,476                0           87                94        1,827,008             4,229        0.11
+  2900   Microsoft Windo            1,388        378                3           15                92               29               622        0.02
+  1409   Ubuntu Update M              736     69,396                0            8                92           31,949               228        0.01
+  1531   Cox                           83         21                3            1                83               21                83        0.00
+  2548   SpotXchange                3,776      4,936                0           47                80            1,748             1,723        0.05
+  3671   news.com.au                  159         29                5            2                79               15                91        0.00
+   665   Google Safebrow           13,572    111,076                0          171                79            3,551               193        0.19
+  2481   East Money                    77         23                3            1                77               23                77        0.00
+  2251   The Hollywood R           22,783     23,076                0          294                77            2,120             6,180        0.32
+  2261   Adap.tv                    2,176      1,778                1           28                77              355               546        0.03
+  2658   Google URL Shor              229         85                2            3                76               39                87        0.00
+  2387   Tmall                        454        246                1            6                75               48                80        0.01
+  2181   Wimbledon                  1,186      6,628                0           16                74            1,740               318        0.02
+   655   Gmail                     19,606     12,068                1          276                71               55               137        0.27
+  3979   Microsoft Visua              215         98                2            3                71               45                76        0.00
+  2787   bitly                        281        117                2            4                70               34                78        0.00
+  1534   Sprint                       212         67                3            3                70               23                78        0.00
+  1370   The Huffington                70         15                4            1                70               15                70        0.00
+  2813   Sharepoint Onli            2,239        736                3           32                69               56                85        0.03
+   929   YouTube                    9,221     12,888                0          133                69              726               101        0.13
+  2635   ShareThis                     69         33                2            1                69               33                69        0.00
+  2269   Drugs.com                     69        272                0            1                69              272                69        0.00
+  4385   Google Sign in             6,533      3,166                2           95                68               57                90        0.09
+  2863   Motley Fool                  130        111                1            2                65               63                66        0.00
+   847   SSL                          259      4,172                0            4                64            2,137                85        0.00
+   689   iTunes                       128         62                2            2                64               45                66        0.00
+  1112   SMTPS                     20,015     14,071                1          316                63               55               137        0.28
+  1093   Advanced Packag            1,521     72,161                0           24                63           31,949               228        0.02
+   817   Sam's Club                   254        795                0            4                63              646                83        0.00
+  1135   Pinterest                  3,175      4,486                0           50                63              387                83        0.04
+  1391   Daily Mail                    62         43                1            1                62               43                62        0.00
+  1233   Instagram                    312        231                1            5                62               56                78        0.00
+  1499   Stack Overflow             1,187      1,544                0           19                62              441                77        0.02
+   576   Blogger                    3,547      2,346                1           58                61               85                85        0.05
+  3960   Inspectlet                   183        302                0            3                61              105                63        0.00
+  4524   Plex TV                    1,523      2,088                0           25                60            1,397                79        0.02
+   501   Wikipedia                    120        134                0            2                60               76                67        0.00
+  4274   HubSpot                      120         74                1            2                60               43                66        0.00
+  4069   Sway                         120         88                1            2                60               58                67        0.00
+  4532   U.S State                    300        183                1            5                60               49                80        0.00
+   901   Walmart                      968        710                1           16                60               65                84        0.01
+  4639   Instagram Media            1,135      1,981                0           19                59              619                83        0.02
+  2060   Po.st                        238        171                1            4                59               84                72        0.00
+  2245   Oracle sites                  59         24                2            1                59               24                59        0.00
+  1569   Java Update                   59         24                2            1                59               24                59        0.00
+  3940   Marketo                      653        395                1           11                59               74                78        0.01
+  1485   Wikia                        119         85                1            2                59               43                61        0.00
+   893   Vimeo                         58         42                1            1                58               42                58        0.00
+  1378   Indeed                       175        248                0            3                58              102                59        0.00
+   660   Google Analytic           44,898     36,526                1          771                58              236               121        0.62
+  1138   Torrentz                     117         77                1            2                58               59                59        0.00
+  3822   Bootstrap CDN                117        147                0            2                58               76                60        0.00
+   950   Salesforce.com               175         66                2            3                58               22                62        0.00
+  2584   VoiceFive                     58         22                2            1                58               22                58        0.00
+  2456   Atlas Advertise            5,482      5,718                0           96                57              618                79        0.08
+  2455   iPerceptions                 172         78                2            3                57               31                67        0.00
+  1654   500px                        115         85                1            2                57               55                63        0.00
+  2356   Hupu                         115        105                1            2                57               69                60        0.00
+   713   LinkedIn                   4,369      2,061                2           76                57               38                75        0.06
+  2124   SmugMug                      393        176                2            7                56               38                64        0.01
+    24   Amazon                       281        189                1            5                56               43                70        0.00
+  1386   RoadRunner                   113         54                2            2                56               29                58        0.00
+  1313   Doubleclick              150,402    153,652                0        2,669                56            1,189               121        2.08
+  2839   Pastebin.com                 113        348                0            2                56              329                65        0.00
+  4386   Xiaomi                       168         56                3            3                56               23                62        0.00
+  1648   Aliexpress                   112         73                1            2                56               40                57        0.00
+  2112   Starbucks                     55         23                2            1                55               23                55        0.00
+   629   Facebook                  47,428     47,886                0          857                55              490               106        0.66
+  4369   Wirtualna Polsk              279        246                1            5                55              139                74        0.00
+  4596   Font Awesome                  55         30                1            1                55               30                55        0.00
+   760   NewsNow                       55         23                2            1                55               23                55        0.00
+  2111   Microsoft Azure            1,140        791                1           21                54              140                79        0.02
+  2403   Google ads                10,302      5,846                1          188                54               60                89        0.14
+  1403   TED                          109        106                1            2                54               57                59        0.00
+  1659   Akamai                     7,521     12,756                0          139                54            1,568               115        0.10
+  4588   Cloudinary                   872        780                1           16                54              473                77        0.01
+  1456   Sports Illustra              214      1,295                0            4                53            1,079                61        0.00
+  2404   RichRelevance                424        240                1            8                53               54                84        0.01
+  4189   Quizlet                      156      1,390                0            3                52            1,352                61        0.00
+   178   Google APIs               25,768     25,727                1          493                52              450               100        0.36
+  1134   PayPal                       105         77                1            2                52               60                65        0.00
+  2597   CNZZ                         528        249                2           10                52               46                75        0.01
+   184   Google                   182,798    173,685                1        3,554                51            7,997               143        2.53
+  1670   GitHub                     1,951      2,048                0           38                51              389                90        0.03
+  1797   LivePerson                 1,532      2,639                0           30                51              460                70        0.02
+   524   Yahoo!                    15,285      8,926                1          296                51              344                75        0.21
+  2003   Ubuntu                    36,263     17,816                2          712                50            1,121                98        0.50
+  1822   PubNub                       101         58                1            2                50               42                63        0.00
+  2770   TIME.com                      50         54                0            1                50               54                50        0.00
+  2587   Webtrends                    558        291                1           11                50               79                84        0.01
+  1296   SSL client               866,266    970,244                0       17,141                50           13,942               622       11.99
+   475   Tumblr                       294        191                1            6                49               41                70        0.00
+  3846   Ad Master                    198         70                2            4                49               21                58        0.00
+  3736   LinkedIn Contac              546        384                1           11                49               75                66        0.01
+---------------------------------------------------------------------------------------------------------------------------------------------------
+Totals(all_sessions)    :       7,226,776 14,505,492                0      518,959                13        1,827,008             6,180         100

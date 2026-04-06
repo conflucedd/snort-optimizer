@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => ({
     __VERSION__: JSON.stringify(pkg.version),
     'process.env.NODE_ENV': JSON.stringify(mode),
     'process.env.PUBLIC_URL': JSON.stringify('./'),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
   },
   base: './',
   resolve: {
