@@ -1,0 +1,8 @@
+java \
+  -Djava.library.path=./CICFlowMeter/jnetpcap/linux/jnetpcap-1.4.r1425 \
+  -jar CICFlowMeterV3-0.0.4-SNAPSHOT.jar \
+  Friday-WorkingHours.pcap output.csv
+
+go run count_re_new.go /tmp/a.csv \
+  --cols "Flow ID, Source IP, Source Port, Destination IP, Destination Port, Protocol, Timestamp" \
+  --warn-col "Label" > /tmp/a

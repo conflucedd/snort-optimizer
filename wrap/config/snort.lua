@@ -95,11 +95,11 @@ js_norm = default_js_norm
 
 -- the following require additional configuration to be fully effective:
 
-appid =
-{
-    -- appid requires this to use appids in rules
-    app_detector_dir = 'config/'
-}
+-- appid =
+-- {
+--     -- appid requires this to use appids in rules
+--     app_detector_dir = 'config/'
+-- }
 
 --[[
 reputation =
@@ -285,9 +285,4 @@ alert_json =
 {
     file = false,
     -- filename = 'alert.json',  -- 可选（如支持）
-}
-profiler =
-{
-    rules = {
-	    show = true }
 }

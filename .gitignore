@@ -1,2 +1,4 @@
 analyser/analyser
 wrap/data
+*.db
+snort_output.txt
