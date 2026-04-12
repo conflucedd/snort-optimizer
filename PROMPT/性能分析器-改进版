@@ -1,0 +1,106 @@
+对snort rule性能分析器进行改进
+现在输入：snort_output.txt，with_answer.pcap，answer.csv，real.pcap，默认snort配置文件路径（用于运行snort进行统计）。
+添加：保证with_answer少漏报，少误报；real高性能。
+传入参数增加round，进行多round优化（出现某个round改进不明显时可以提前结束）。输出每轮的统计，比如误报率，really的cpu使用率，以及really优化cpu曲线（json数组，150个取样点，方便绘图）。
+要能自己启动snort进行验证。配置文件使用默认的？
+cmd支持，也要支持module packet调用。
+把不同维度的规则分析拆开到不同的go文件，放入analyser文件夹？多round的主逻辑作为main，然后其他的比如按误报率分析的作为其他的拆开的文件方便主逻辑调用。
+数据库的建立只是为了方便分析时取数，请放到/tmp文件夹并在程序结束后执行清理？
+
+对进度进行花里胡哨输出（cmd和调用module的程序进行？）。// 通过/proc查看snort读取这个pacp文件的指针然后除文件大小
+snort输出和csv标记之间有UTF导致的偏差。
+把cmd的用法和module的调用方法写到doc文件夹。
+
+####################
+
+贪心迭代法（Greedy Iterative Approach）逻辑清晰、可解释性极强，且工程实现上非常稳健。只要你把**自动化测试闭环**和**指标收集**做好，这就是一个非常优秀的工程类毕设。
+
+接下来，我为你梳理一份基于“贪心法+SQLite”的**工程落地指南**，你可以直接把这些模块写进你的毕设系统架构图中：
+
+
+### 一、 核心架构设计（你的系统应该分几个模块）
+
+你的go程序可以分为以下 4 个核心组件：
+
+1. **Rule Manager（规则管理器）：** 
+   * 负责读取原始的 `snort.rules` 文件。
+   * 接收一串 SID 列表，利用正则表达式把这些 SID 对应的规则注释掉（加 `#`），生成新的一套规则供测试使用。
+2. **Environment Engine（环境调度器）：** 
+   * 使用 `subprocess` 模块调用命令行跑 Snort（读取 PCAP）。
+   * 收集 Snort 跑完后的标准输出（Stdout）和 Profiler 日志。
+3. **Log Parser（日志解析器）：** 
+   * 从 Snort 输出中提取出当前的 **耗时 (Latency/Time)**、**触发警报数 (Alerts)**。
+   * 解析 Snort Profiler 日志，提取出当前**耗时排名前 N 的规则 SID**。
+4. **Greedy Decision Maker（贪心决策中枢）：** 
+   * 核心逻辑大脑。决定下一轮要干掉哪些规则、是否要回退（Rollback）。
+   * 将每轮结果存入 **SQLite** 数据库。
+
+---
+
+### 二、 贪心迭代法的具体执行流程（代码逻辑）
+
+为了让贪心法不仅能跑，还能跑出好成绩，你需要设计一个**“带回退机制（Rollback）”的贪心策略**。以下是伪代码级别的业务流：
+
+#### 准备工作（极其重要）：
+准备两个 PCAP 文件：
+*   `normal.pcap`：纯正常流量。用于测试**耗时**和**误报率(FPR)**。
+*   `malicious.pcap`：纯攻击流量。用于测试**检测率(DR)**。
+
+#### 第一步：基准测试 (Round 0)
+*   开启所有规则。
+*   跑 `normal.pcap` 记录基础耗时 $T_0$ 和基础误报数 $F_0$。
+*   跑 `malicious.pcap` 记录基础检出数 $D_0$。
+*   **开启 Snort Rule Profiler**，拿到耗时最长的 Top 100 规则的 SID。
+
+#### 第二步：进入贪心循环 (Round 1 ... N)
+```python
+# 初始化状态
+current_disabled_sids = []
+best_dr = D0 
+tolerable_dr_drop = 0.05  # 允许检测率最多下降5% (你的工程底线)
+
+for round_id in range(1, MAX_ROUNDS):
+    # 1. 寻找"软柿子" (贪心策略)
+    # 从上一轮的 Profiler 日志中，找出耗时最高，且在 malicious.pcap 中几乎没有触发的规则
+    target_sids_to_kill = get_high_time_low_hit_rules(top_N=10) 
+    
+    # 2. 尝试禁用它们 (生成新规则文件)
+    test_disabled_sids = current_disabled_sids + target_sids_to_kill
+    generate_new_rules_file(test_disabled_sids)
+    
+    # 3. 运行测试获取新指标
+    current_T, current_F = run_snort(normal_pcap)
+    current_D = run_snort(malicious_pcap)
+    
+    # 4. 评估与决策 (贪心判断)
+    dr_drop_rate = (D0 - current_D) / D0
+    
+    if dr_drop_rate <= tolerable_dr_drop:
+        # 成功！检测率没怎么降，耗时大概率减少了
+        print(f"Round {round_id} 成功: 耗时缩短，保存状态。")
+        current_disabled_sids = test_disabled_sids # 确认禁用
+        save_to_sqlite(round_id, current_T, current_F, current_D, "SUCCESS", current_disabled_sids)
+    else:
+        # 失败！不小心砍到了大动脉，检测率暴跌
+        print(f"Round {round_id} 失败: DR下降过多，触发回退 (Rollback)。")
+        save_to_sqlite(round_id, current_T, current_F, current_D, "FAILED", test_disabled_sids)
+        # 此时 current_disabled_sids 保持不变，下一轮换一批 target_sids_to_kill 试
+        
+    # 如果耗时已经达到你的预期目标，或者连续N轮失败，可以提前 break
+```
+
+### 三、 毕设加分项（导师最喜欢看的东西）
+既然是工程毕设，**你不能只交一堆代码，你要展示“工程可视化”和“数据分析”**。利用你存在 SQLite 里的数据，毕设答辩时你可以展示以下内容，绝对拿高分：
+
+1.  **性能折线图 (Trade-off Curve)：**
+    *   画一张图，X 轴是迭代轮数 (Rounds)，Y 轴有两条线：一条是耗时（逐渐下降），另一条是检测率 DR（保持平稳，最后可能略微下降）。
+    *   这说明你的贪心程序确确实实“智能地”剔除了无用规则。
+2.  **散点图（帕累托前沿）：**
+    *   从 SQLite 里提取所有成功的 Round。
+    *   X 轴是耗时，Y 轴是检测率。每个点代表一种裁剪方案。标出最左上角的那个点（耗时最短，检测率最高），这就叫**“找到了该环境下的工程最优解”**。
+3.  **工程鲁棒性设计（写在论文里）：**
+    *   强调你的系统具备 **自动化恢复（Rollback）** 功能。
+    *   强调你利用了 **Snort Profiler** 进行启发式搜索（而不是盲目瞎删），大大减少了寻找最优解的时间。
+
+### 总结
+就按这个路线走：**模块化架构 + 贪心试错逻辑 + SQLite状态存储**。
