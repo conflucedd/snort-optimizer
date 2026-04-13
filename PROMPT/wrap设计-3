@@ -1,0 +1,455 @@
+请在当前项目中实现一个新的 `wrap2` 模块，用于以更纯粹的方式运行和管理 Snort。
+
+【项目背景】
+当前项目结构大致如下：
+- `wrap`：旧版 Snort Go wrap，也包含后端逻辑
+- `analyser`：根据 Snort profiler 结果裁剪规则
+- `web`：前端页面
+
+目标是在此基础上实现一个新的 `wrap2` 模块，职责更单一，只负责：
+- 根据配置启动/停止/重启 Snort
+- 管理 `rules.db` 和 `all.rules`
+- 可选地接收并保存 Snort 标准输出
+- 可选地启用 `alert_json` 文件输出，并刷到 `alerts.db`
+
+可以参考 `wrap` 的现有内容，但不要求照搬，只要最终功能实现即可。
+
+--------------------------------------------------
+一、总体要求
+--------------------------------------------------
+
+1. `wrap2` 同时支持：
+   - 作为 Go module 被调用
+   - 作为命令行程序被调用
+
+2. `cmd` 相关逻辑和主函数放到 `wrap2/cmd` 下
+
+3. 类型定义拆分要求：
+   - `types`（与 `wrap2` 同级目录）只放最通用的类型定义，目前只包含：
+     - rules 相关类型
+     - alerts 相关类型
+   - `wrap2/types` 放 `wrap2` 自己需要的对象和类型，比如：
+     - Config
+     - Runner 状态
+     - RunInfo
+     - 其他 wrap 专属对象
+
+4. 不要把大量逻辑塞进单个 `.go` 文件，要适当拆分 package
+
+5. 仅需支持 Linux
+
+6. 不需要实现 Web API，不需要前端，不需要复杂守护进程
+
+7. 优先使用 Go 标准库，不要使用 ORM，SQLite 直接写 SQL
+
+--------------------------------------------------
+二、目录与输出要求
+--------------------------------------------------
+
+请直接在项目中创建/修改 `wrap2`，至少包含这些部分：
+- `wrap2/cmd/...`
+- `wrap2/docs/...`
+- `wrap2/types/...`
+- `wrap2/runner/...` 或等价 package
+- `wrap2/rules/...`
+- `wrap2/alerts/...`
+
+另外在项目根级的同级目录中使用：
+- `types/rules...`
+- `types/alerts...`
+
+完成后请给出最终目录树。
+
+--------------------------------------------------
+三、配置结构要求
+--------------------------------------------------
+
+请定义清晰的配置结构，建议使用 `SnortWorkingDir` 字段名，不要只叫 `swd`。
+
+配置至少包含：
+- `Mode`
+- `SnortWorkingDir`
+- `SnortConfigPath`
+- `Interface`
+- `PcapFile`
+- `LuaOverrides []string`
+- `NeedOutput bool`
+- `NeedAlert bool`
+
+其中：
+
+1. 必填项
+- `SnortWorkingDir` 是重要配置，必须支持传入
+- 若未传入则视为错误，不要猜默认值
+
+2. 模式
+支持两种运行模式：
+- 监听网卡
+- 读取 pcap 文件
+
+要求：
+- `Mode=interface` 时必须提供网卡名
+- `Mode=pcap` 时必须提供 pcap 文件路径
+
+3. Snort 配置文件路径
+- 支持传入相对路径
+- 但实际传给 Snort 时必须转换为绝对路径，以保证兼容性
+
+4. 配置持久化
+- 若部分配置未传入，则从 `SnortWorkingDir/wrap.db` 中读取最近一次保存的配置
+
+5. Lua 覆写
+- 支持额外传入多个 `--lua` 配置覆写项
+
+6. NeedOutput
+- 若启用，则将 Snort 的标准输出/标准错误保存到：
+  - `SnortWorkingDir/snort_output.txt`
+
+7. NeedAlert
+- 若启用，则先删除SnortWorkingDir下的alert_json.txt，然后通过 `--lua` 覆写：
+  - `alert_json = { file = true }`
+- 然后读取`alert_json.txt`
+- 并把告警刷入 `alerts.db`
+- 若数据库不存在则初始化
+
+--------------------------------------------------
+四、Snort 启动要求
+--------------------------------------------------
+
+运行 Snort 时必须严格遵守以下规则：
+
+1. Snort 程序路径必须严格来自环境变量：
+   - `SNORT_DIR`
+   - 可执行文件为 `${SNORT_DIR}/snort`
+
+2. `--daq-dir` 必须严格来自环境变量：
+   - `DAQ_DIR`
+
+3. 若 `SNORT_DIR`、`DAQ_DIR` 未设置，或对应文件/目录不存在，直接报错，不要猜测默认路径
+
+4. 传给 Snort 的配置文件路径必须是绝对路径
+
+5. `--lua` 必须按独立参数传递，不要拼成单个 shell 字符串
+   例如应当是：
+   - `--lua`, `ips = { ... }`
+   而不是：
+   - `"--lua 'ips = { ... }'"`
+
+6. 不要修改原始 `snort.lua` 文件内容，只通过命令行参数和生成文件实现覆写
+
+--------------------------------------------------
+五、rules 覆写要求
+--------------------------------------------------
+
+本 `wrap2` 必须直接覆写 rules 配置：
+- 忽略配置文件中的 `ips.rules` 配置
+- 改为统一使用：
+  - `SnortWorkingDir/all.rules`
+（使用--lua即可实现，参考ips.rules = [[include all.rules]]）
+实现要求：
+
+1. `all.rules` 来源
+- 使用 `SnortWorkingDir/rules.db` 生成 `all.rules`
+
+2. 初始化 `rules.db`
+- 若 `rules.db` 不存在，则根据：
+  - `SnortWorkingDir/rules/*.rules`
+  初始化数据库
+- 默认启用全部规则
+
+3. 初始化时存储的字段
+规则表至少保存这些基本字段：
+- `id`
+- `sid`
+- `gid`
+- `rev`
+- `action`
+- `proto`
+- `src_net`
+- `src_port`
+- `direction`
+- `dst_net`
+- `dst_port`
+- `msg`
+- `classtype`
+- `enabled`
+- `source_file`
+- `raw_text`
+
+4. 主键要求
+`rules` 表使用原来的设计：
+- `id INTEGER PRIMARY KEY AUTOINCREMENT`
+
+并且至少包含：
+- `sid INTEGER NOT NULL`
+- `gid INTEGER NOT NULL DEFAULT 1`
+- `rev INTEGER`
+
+5. 唯一性要求
+- 需要对规则去重或约束时，不要把 `sid` 作为主键
+- 可按你认为合理的方式建立唯一约束，但必须保证数据库能存储多个不同记录，并且 `EnableRule/DisableRule` 以数据库主键 `id` 为准
+
+6. 规则解析范围
+不要求实现完整 Snort AST，只需提取基础字段：
+- `action`
+- `proto`
+- `src_net`
+- `src_port`
+- `direction`
+- `dst_net`
+- `dst_port`
+- `msg`
+- `classtype`
+- `sid`
+- `gid`
+- `rev`
+
+其余内容保存在 `raw_text`
+
+7. 解析容错
+- 空行、注释要跳过
+- 单条规则解析失败时记录错误并跳过，不要导致整个初始化失败
+
+8. `all.rules` 生成规则
+- 每次启动前重新生成 `all.rules`
+- 仅导出 `enabled=1` 的规则
+- 直接使用数据库中的 `raw_text`
+- 保持稳定顺序，建议按 `id` 或 `source_file, sid, rev, id` 排序
+- 即使没有启用规则，也生成空的 `all.rules`
+
+--------------------------------------------------
+六、数据库要求
+--------------------------------------------------
+
+（一）`wrap.db`
+位置：
+- `SnortWorkingDir/wrap.db`
+
+用途：
+- 保存最近一次有效运行配置
+
+建议使用单表：
+- `runtime_config(key TEXT PRIMARY KEY, value TEXT NOT NULL)`
+
+至少保存这些键：
+- `mode`
+- `interface`
+- `pcap_file`
+- `snort_working_dir`
+- `snort_config_path`
+- `lua_overrides`
+- `need_output`
+- `need_alert`
+
+（二）`rules.db`
+位置：
+- `SnortWorkingDir/rules.db`
+
+至少包含表 `rules`：
+- `id INTEGER PRIMARY KEY AUTOINCREMENT`
+- `sid INTEGER NOT NULL`
+- `gid INTEGER NOT NULL DEFAULT 1`
+- `rev INTEGER`
+- `action TEXT`
+- `proto TEXT`
+- `src_net TEXT`
+- `src_port TEXT`
+- `direction TEXT`
+- `dst_net TEXT`
+- `dst_port TEXT`
+- `msg TEXT`
+- `classtype TEXT`
+- `enabled INTEGER NOT NULL DEFAULT 1`
+- `source_file TEXT`
+- `raw_text TEXT NOT NULL`
+
+（三）`alerts.db`
+位置：
+- `SnortWorkingDir/alerts.db`
+
+至少包含表 `alerts`：
+- `id INTEGER PRIMARY KEY AUTOINCREMENT`
+- `timestamp TEXT`
+- `pkt_num INTEGER`
+- `proto TEXT`
+- `pkt_gen TEXT`
+- `pkt_len INTEGER`
+- `dir TEXT`
+- `src_ap TEXT`
+- `dst_ap TEXT`
+- `gid INTEGER`
+- `sid INTEGER`
+- `rev INTEGER`
+- `rule TEXT`
+- `action TEXT`
+- `raw_json TEXT NOT NULL`
+- `created_at TEXT NOT NULL`
+
+--------------------------------------------------
+七、Runner 要求
+--------------------------------------------------
+
+请根据 `Config` 初始化一个 `Runner`。
+
+至少支持这些接口：
+- `Start()`
+- `Stop()`
+- `Restart()`
+- `Reset()`
+- `EnableRule(ruleID int64)`
+- `DisableRule(ruleID int64)`
+- `Status()`
+
+语义要求：
+
+1. `EnableRule` / `DisableRule`
+- 参数是数据库主键 `id`，不是 sid
+- 直接操作 `rules.db`
+
+2. `Reset()`
+- 直接删除 `rules.db`
+- 后续启动前需要重新从 `SnortWorkingDir/rules/*.rules` 初始化
+
+3. `Start()`
+- 启动 Snort
+- 若已经运行，返回明确错误，不要重复启动
+- 启动前确保 `all.rules` 已根据当前数据库重新生成
+
+4. `Stop()`
+- 停止 Snort
+- 同时停止相关后台 goroutine，例如 alert刷库
+- 不要 panic
+
+5. `Restart()`
+- 等价于 `Stop()` + `Start()`
+
+6. `Status()`
+- 返回当前运行状态和进程信息
+
+--------------------------------------------------
+八、进程信息要求
+--------------------------------------------------
+
+为了方便外部检测 CPU 和内存占用，`Runner` 需要能返回用于进程监控的信息。
+
+请设计一个 `RunInfo`，至少包括：
+- `PID int`
+- `PGID int`
+- `Running bool`
+- `StartTime time.Time`
+
+要求：
+- `Start()` 成功后应保存并可返回这些信息
+- Snort 应使用独立进程组启动，便于停止与资源监控
+- `Stop()` 时能按进程组正确结束相关进程
+
+--------------------------------------------------
+九、alert_json 处理要求
+--------------------------------------------------
+
+当 `NeedAlert=true` 时：
+
+1. 通过 `--lua` 覆写：
+- `alert_json = { file = true }`
+
+2. 目标告警文件按以下路径处理：
+- `SnortWorkingDir/alert_json.txt`
+
+3. 启动snort前先删除alert_json.txt
+
+4. 假设每行都是一个 JSON 对象
+
+5. 单行解析失败时记录错误并跳过
+
+6. 需要把 `rule` 字段如：
+- `"1:44604:1"`
+拆解成：
+- `gid`
+- `sid`
+- `rev`
+
+7. 若 `alerts.db` 不存在则自动初始化
+
+8. Snort 重启、文件截断或重新创建后，tail 逻辑应尽量继续跟踪
+
+告警样例：
+{ "timestamp" : "07/07-20:00:35.492196", "pkt_num" : 399, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 390, "dir" : "C2S", "src_ap" : "192.168.10.9:1035", "dst_ap" : "192.168.10.3:389", "rule" : "1:44604:1", "action" : "would_block" }
+
+--------------------------------------------------
+十、CLI 要求
+--------------------------------------------------
+
+`wrap2/cmd` 只需要实现一个“启动型”命令即可，不需要做一整套子命令。
+
+行为要求：
+1. CLI 启动后，调用 `Runner.Start()`
+2. 然后阻塞等待
+3. 收到 `Ctrl+C` / `SIGINT` / 合适的终止信号后，调用 `Runner.Stop()`
+4. 再退出程序
+
+也就是说，cmd 的职责是：
+- 启动
+- 挂起等待
+- 处理中断信号
+- 停止并退出
+
+CLI 本身不要承载太多业务逻辑，核心逻辑仍然放在 module 中。
+
+可以支持这些参数：
+- `--swd`
+- `--mode`
+- `--iface`
+- `--pcap`
+- `--config`
+- `--lua`（允许重复传入）
+- `--need-output`
+- `--need-alert`
+
+--------------------------------------------------
+十一、文档要求
+--------------------------------------------------
+
+请在 `wrap2/docs` 中写简略说明，至少包括：
+1. 包结构说明
+2. `types` 与 `wrap2/types` 的职责区别
+3. `Config` 字段说明
+4. `Runner` 接口说明
+5. 一个 module 调用示例
+6. 一个 CLI 调用示例
+7. 已知限制与设计假设
+
+--------------------------------------------------
+十二、测试信息
+--------------------------------------------------
+
+测试环境变量：
+- `SNORT_DIR=/home/c/snort-optimizer/wrap/snort/build/src`
+- `DAQ_DIR=/home/c/snort-optimizer/wrap/snort/libdaq/build/lib/daq`
+
+测试 Snort 配置文件：
+- `/home/c/snort-optimizer/wrap/config/snort.lua`
+
+--------------------------------------------------
+十三、验收标准
+--------------------------------------------------
+
+完成后请确保：
+1. `go build ./...` 可以通过
+2. `wrap2/cmd` 可以编译为可执行文件
+3. 当 `rules.db` 不存在时，能从 `SnortWorkingDir/rules/*.rules` 初始化
+4. 能根据 `rules.db` 生成 `all.rules`
+5. `EnableRule(ruleID)` / `DisableRule(ruleID)` 能更新数据库并影响后续生成的 `all.rules`
+6. 能严格按 `SNORT_DIR` 和 `DAQ_DIR` 拼接 Snort 启动命令
+7. `NeedOutput=true` 时会写 `snort_output.txt`
+8. `NeedAlert=true` 时会启用 `alert_json file=true`，并将新增告警写入 `alerts.db`
+9. `Start()` 后能拿到 PID / PGID 等运行信息
+10. 完成后输出目录树
+11. 说明你做了哪些设计假设
+
+--------------------------------------------------
+十四、额外要求
+--------------------------------------------------
+
+如果你发现有关键歧义，先停止编码并列出问题；否则直接开始实现。
+
+更正：为了代码简洁，可以使用sqlite3驱动，去掉
