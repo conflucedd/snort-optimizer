@@ -1,0 +1,10 @@
+这是我的毕设文件夹，我的毕设项目是snort性能优化器，会通过优化snort的配置文件和裁剪snort规则来优化snort的性能。
+wrap是snort的go wrap。
+analyser是snort的规则分析文件夹，用于根据snort给出的profiler裁剪规则
+web是前端页面文件夹。
+
+你的任务是
+
+{ "timestamp" : "07/07-20:00:35.492196", "pkt_num" : 399, "proto" : "TCP", "pkt_gen" : "raw", "pkt_len" : 390, "dir" : "C2S", "src_ap" : "192.168.10.9:1035", "dst_ap" : "192.168.10.3:389", "rule" : "1:44604:1", "action" : "would_block" }
+07/07-20:00:35.492196 [would_block] [**] [1:44604:1] "SERVER-OTHER Novell eDirectory LDAP server buffer overflow attempt" [**] [Classification: Attempted User Privilege Gain] [Priority: 1] {TCP} 192.168.10.9:1035 -> 192.168.10.3:389
+alert tcp $EXTERNAL_NET any -> $HOME_NET 389 ( msg:"SERVER-OTHER Novell eDirectory LDAP server buffer overflow attempt"; flow:to_server,established; content:"|30 84|",depth 2; byte_test:4,>,0xFFFFFF,0,relative,little; metadata:policy max-detect-ips drop; service:ldap; reference:url,download.novell.com/Download?buildid=bXPFv5btgsA; classtype:attempted-user; sid:44604; rev:1; )

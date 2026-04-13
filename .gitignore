@@ -12,3 +12,4 @@ wrap/config/rules.db
 *.csv
 analyser/snort_output.txt
 wrap/snort_output.txt
+wrap/snort_output.txt

@@ -87,6 +87,7 @@ func (r *SnortRunner) Run(ctx context.Context) error {
 		args = append(args, "-r", r.cfg.PCAPPath)
 	}
 	args = append(args, r.cfg.ExtraArgs...)
+	//args = append(args, "--lua", "ips = nil")
 
 	cmd := exec.Command(r.cfg.SnortBin, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
