@@ -1,0 +1,634 @@
+[
+  {
+    "gid": 1,
+    "sid": 384,
+    "rev": 8,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_no_match_time": 2,
+      "check_count": 1735,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 0,
+      "overlap_ratio": 1,
+      "overlap_with": "1:366:11",
+      "packet_alert_count": 3,
+      "total_time_us": 4408
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 529,
+    "rev": 16,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 1,
+      "avg_no_match_time": 2,
+      "check_count": 6375,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 45,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 1,
+      "total_time_us": 14585
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 1045,
+    "rev": 15,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 4,
+      "check_count": 6,
+      "false_positive_rate": 0,
+      "hit_count": 3,
+      "match_count": 3,
+      "overlap_ratio": 1,
+      "overlap_with": "1:1201:13",
+      "packet_alert_count": 3,
+      "total_time_us": 12
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 1325,
+    "rev": 14,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "avg_match_time": 1,
+      "check_count": 2,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 2,
+      "overlap_ratio": 1,
+      "overlap_with": "1:19559:16",
+      "packet_alert_count": 2,
+      "total_time_us": 2
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 2179,
+    "rev": 16,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "avg_match_time": 1,
+      "avg_no_match_time": 1,
+      "check_count": 24898,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 8,
+      "overlap_ratio": 1,
+      "overlap_with": "1:2417:17",
+      "packet_alert_count": 2,
+      "total_time_us": 39313
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 3547,
+    "rev": 8,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 10,
+      "avg_no_match_time": 2,
+      "check_count": 1458,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 2,
+      "overlap_ratio": 1,
+      "overlap_with": "1:38270:4",
+      "packet_alert_count": 1,
+      "total_time_us": 2994
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 8375,
+    "rev": 12,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 22,
+      "avg_match_time": 11,
+      "check_count": 1,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "overlap_ratio": 1,
+      "overlap_with": "1:39488:2",
+      "packet_alert_count": 1,
+      "total_time_us": 22
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 11263,
+    "rev": 8,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_match_time": 2,
+      "check_count": 109572,
+      "false_positive_rate": 0,
+      "hit_count": 26,
+      "match_count": 26,
+      "overlap_ratio": 0.9615384615384616,
+      "overlap_with": "1:29957:6",
+      "packet_alert_count": 26,
+      "total_time_us": 55849
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 13360,
+    "rev": 9,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "check_count": 23826,
+      "false_positive_rate": 0,
+      "hit_count": 3991,
+      "match_count": 47652,
+      "overlap_ratio": 1,
+      "overlap_with": "1:491:15",
+      "packet_alert_count": 11913,
+      "total_time_us": 38431
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 13913,
+    "rev": 17,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 145,
+      "avg_match_time": 210,
+      "avg_no_match_time": 113,
+      "check_count": 3,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "overlap_ratio": 1,
+      "overlap_with": "1:38038:2",
+      "packet_alert_count": 1,
+      "total_time_us": 436
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 16014,
+    "rev": 11,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "avg_match_time": 3,
+      "avg_no_match_time": 1,
+      "check_count": 44824,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "packet_alert_count": 1,
+      "total_time_us": 89340
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 17410,
+    "rev": 29,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "check_count": 1656383,
+      "false_positive_rate": 0,
+      "hit_count": 14,
+      "match_count": 1316,
+      "overlap_ratio": 0.8571428571428571,
+      "overlap_with": "1:29957:6",
+      "packet_alert_count": 14,
+      "total_time_us": 146109
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 17750,
+    "rev": 15,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 4,
+      "avg_match_time": 1,
+      "avg_no_match_time": 4,
+      "check_count": 84464,
+      "false_positive_rate": 0,
+      "hit_count": 3,
+      "match_count": 3,
+      "packet_alert_count": 3,
+      "total_time_us": 372395
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 20258,
+    "rev": 12,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "avg_match_time": 1,
+      "check_count": 7,
+      "false_positive_rate": 0,
+      "hit_count": 7,
+      "match_count": 7,
+      "overlap_ratio": 1,
+      "overlap_with": "1:29957:6",
+      "packet_alert_count": 7,
+      "total_time_us": 12
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 20584,
+    "rev": 8,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 4,
+      "avg_match_time": 13,
+      "avg_no_match_time": 4,
+      "check_count": 19504,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 2,
+      "packet_alert_count": 2,
+      "total_time_us": 87270
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 21039,
+    "rev": 9,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 16,
+      "avg_match_time": 155,
+      "avg_no_match_time": 13,
+      "check_count": 470,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 8,
+      "overlap_ratio": 1,
+      "overlap_with": "1:19887:8",
+      "packet_alert_count": 2,
+      "total_time_us": 7623
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 23621,
+    "rev": 9,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 2,
+      "check_count": 5,
+      "false_positive_rate": 0,
+      "hit_count": 5,
+      "match_count": 5,
+      "overlap_ratio": 1,
+      "overlap_with": "1:37909:2",
+      "packet_alert_count": 5,
+      "total_time_us": 12
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 23878,
+    "rev": 13,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 4,
+      "avg_match_time": 2,
+      "check_count": 1,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "overlap_ratio": 1,
+      "overlap_with": "1:39488:2",
+      "packet_alert_count": 1,
+      "total_time_us": 4
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 24105,
+    "rev": 11,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 9,
+      "avg_match_time": 15,
+      "avg_no_match_time": 9,
+      "check_count": 15817,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "packet_alert_count": 1,
+      "total_time_us": 152871
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 26848,
+    "rev": 7,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 11,
+      "avg_no_match_time": 1,
+      "check_count": 8,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "overlap_ratio": 1,
+      "overlap_with": "1:16642:12",
+      "packet_alert_count": 1,
+      "total_time_us": 20
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 29456,
+    "rev": 3,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_no_match_time": 2,
+      "check_count": 1735,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 0,
+      "overlap_ratio": 1,
+      "overlap_with": "1:384:8",
+      "packet_alert_count": 3,
+      "total_time_us": 4408
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 29592,
+    "rev": 5,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 18,
+      "avg_match_time": 18,
+      "check_count": 2,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 2,
+      "overlap_ratio": 1,
+      "overlap_with": "1:29957:6",
+      "packet_alert_count": 2,
+      "total_time_us": 36
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 37961,
+    "rev": 2,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 3,
+      "avg_match_time": 9,
+      "check_count": 5,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 2,
+      "overlap_ratio": 1,
+      "overlap_with": "1:29957:6",
+      "packet_alert_count": 2,
+      "total_time_us": 19
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 38320,
+    "rev": 2,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_match_time": 1,
+      "check_count": 760,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 12,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 3,
+      "total_time_us": 463
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 38369,
+    "rev": 4,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 16,
+      "avg_match_time": 9,
+      "avg_no_match_time": 16,
+      "check_count": 4247,
+      "false_positive_rate": 0,
+      "hit_count": 3,
+      "match_count": 3,
+      "packet_alert_count": 3,
+      "total_time_us": 71552
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 39488,
+    "rev": 2,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 16,
+      "avg_match_time": 12,
+      "avg_no_match_time": 17,
+      "check_count": 735,
+      "false_positive_rate": 0,
+      "hit_count": 16,
+      "match_count": 72,
+      "overlap_ratio": 1,
+      "overlap_with": "1:15362:12",
+      "packet_alert_count": 16,
+      "total_time_us": 12370
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 44484,
+    "rev": 6,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "avg_check_time": 1,
+      "avg_match_time": 1,
+      "check_count": 1814,
+      "false_positive_rate": 0,
+      "hit_count": 376,
+      "match_count": 1812,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 574,
+      "total_time_us": 1867
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 44485,
+    "rev": 4,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "check_count": 1814,
+      "false_positive_rate": 0,
+      "hit_count": 178,
+      "match_count": 1812,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 178,
+      "total_time_us": 1616
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 44486,
+    "rev": 4,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "check_count": 869,
+      "false_positive_rate": 0,
+      "hit_count": 180,
+      "match_count": 867,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 182,
+      "total_time_us": 692
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 44487,
+    "rev": 4,
+    "reasons": [
+      "high_overlap"
+    ],
+    "metrics": {
+      "check_count": 1814,
+      "false_positive_rate": 0,
+      "hit_count": 374,
+      "match_count": 1812,
+      "overlap_ratio": 1,
+      "overlap_with": "1:44488:4",
+      "packet_alert_count": 570,
+      "total_time_us": 1532
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 46412,
+    "rev": 3,
+    "reasons": [
+      "high_overlap",
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 6,
+      "avg_match_time": 34,
+      "avg_no_match_time": 6,
+      "check_count": 4028,
+      "false_positive_rate": 0,
+      "hit_count": 1,
+      "match_count": 1,
+      "overlap_ratio": 1,
+      "overlap_with": "1:37908:2",
+      "packet_alert_count": 1,
+      "total_time_us": 24495
+    }
+  },
+  {
+    "gid": 1,
+    "sid": 51965,
+    "rev": 2,
+    "reasons": [
+      "low_value_high_cost"
+    ],
+    "metrics": {
+      "avg_check_time": 2,
+      "avg_match_time": 30,
+      "avg_no_match_time": 2,
+      "check_count": 47278,
+      "false_positive_rate": 0,
+      "hit_count": 2,
+      "match_count": 2,
+      "packet_alert_count": 2,
+      "total_time_us": 121266
+    }
+  }
+]

@@ -1,0 +1,370 @@
+--------------------------------------------------
+o")~   Snort++ 3.9.0.0
+--------------------------------------------------
+Loading config/snort.lua:
+Loading snort_defaults.lua:
+Finished snort_defaults.lua:
+	alert_fast
+	alert_json
+	ips
+	ftp_client
+	file_policy
+	file_id
+	http_inspect
+	rpc_decode
+	classifications
+	ftp_server
+	smtp
+	port_scan
+	gtp_inspect
+	active
+	alerts
+	daq
+	decode
+	host_cache
+	host_tracker
+	hosts
+	network
+	packets
+	process
+	search_engine
+	so_proxy
+	sip
+	dce_udp
+	stream
+	stream_ip
+	stream_icmp
+	stream_tcp
+	stream_udp
+	stream_user
+	stream_file
+	arp_spoof
+	back_orifice
+	dns
+	imap
+	netflow
+	normalizer
+	pop
+	ssh
+	ssl
+	telnet
+	cip
+	dnp3
+	iec104
+	mms
+	modbus
+	s7commplus
+	dce_smb
+	dce_tcp
+	dce_http_proxy
+	dce_http_server
+	ftp_data
+	http2_inspect
+	js_norm
+	wizard
+	binder
+	references
+	output
+	trace
+Finished config/snort.lua:
+Loading file_id.rules_file:
+Loading file_magic.rules:
+Finished file_magic.rules:
+Finished file_id.rules_file:
+Loading ips.rules:
+Loading all.rules:
+Finished all.rules:
+Loading ssh_brute.rules:
+Finished ssh_brute.rules:
+Finished ips.rules:
+--------------------------------------------------
+pcre counts
+               pcre_rules: 12430
+              pcre_native: 12430
+--------------------------------------------------
+ips policies rule stats
+              id  loaded  shared enabled    file
+               0   47313       1   47313    config/snort.lua
+--------------------------------------------------
+rule counts
+       total rules loaded: 47313
+          duplicate rules: 1
+               text rules: 47313
+            option chains: 47313
+            chain headers: 1598
+                 flowbits: 718
+     flowbits not checked: 69
+--------------------------------------------------
+port rule counts
+             tcp     udp    icmp      ip
+     any    1851     395     475     300
+     src    1253     163       0       0
+     dst    5380    1018       0       0
+    both     113      54       0       0
+   total    8597    1630     475     300
+--------------------------------------------------
+service rule counts          to-srv  to-cli
+                      bgp:        5       1
+                   dcerpc:     1766    1226
+                     dhcp:       37      10
+                     dnp3:        0       6
+                      dns:      278     123
+                     drda:        5       0
+                     file:     1100    1115
+                  file_id:      219     219
+                      ftp:      199      24
+                 ftp-data:     1184   11090
+                   gopher:        0       1
+                     http:    16023   14586
+                    http2:    16025   14586
+                    http3:    16023   14586
+                    ident:        1       0
+                     igmp:        1       1
+                     imap:     1233   11344
+                      ipp:        0       1
+                      irc:       40      14
+                     ircd:        9       3
+                 java_rmi:       55       3
+                 kerberos:       37       6
+                     ldap:       49       9
+                      ldp:        1       0
+                   modbus:       34      10
+                    mysql:       66       7
+              netbios-dgm:       12      11
+               netbios-ns:       15       5
+              netbios-ssn:     1655    1206
+                     nntp:        2       2
+                      ntp:       37       7
+                  openvpn:       16      16
+                     pop3:     1190   11347
+               postgresql:       10       0
+                  printer:        6       1
+                   radius:        3       2
+                      rdp:       10      20
+                     rtmp:        1       4
+                      rtp:        1       1
+                     rtsp:       17       2
+                      sip:      340      44
+                     smtp:    10265    1142
+                     snmp:       49      10
+                     ssdp:       13       0
+                      ssh:       15       6
+                      ssl:      210     230
+                   sunrpc:      130       9
+                   syslog:        4       0
+                 teamview:        1       2
+                   telnet:       63      15
+                     tftp:       14       9
+                      vnc:        1       1
+               vnc-server:       12      10
+                     wins:        3       0
+                    total:    68485   83073
+--------------------------------------------------
+fast pattern groups
+                      src: 510
+                      dst: 1646
+                      any: 8
+                to_server: 130
+                to_client: 101
+--------------------------------------------------
+search engine (ac_bnfa)
+                instances: 1314
+                 patterns: 168053
+            pattern chars: 4188058
+               num states: 3235036
+         num match states: 443861
+             memory scale: MB
+             total memory: 103.157
+           pattern memory: 10.4035
+        match list memory: 54.3263
+        transition memory: 38.2672
+        fast pattern only: 109771
+--------------------------------------------------
+afpacket DAQ configured to passive.
+Commencing packet processing
+++ [0] enp11s0
+** caught term signal
+== stopping
+-- [0] enp11s0
+--------------------------------------------------
+Packet Statistics
+--------------------------------------------------
+daq
+                 received: 23931
+                 analyzed: 23928
+                    allow: 23457
+                whitelist: 471
+                     idle: 33
+                 rx_bytes: 3426168
+--------------------------------------------------
+codec
+                    total: 23928       	(100.000%)
+                    other: 76          	(  0.318%)
+                 discards: 548         	(  2.290%)
+                      arp: 912         	(  3.811%)
+                      eth: 23928       	(100.000%)
+                    icmp4: 3           	(  0.013%)
+                 icmp4_ip: 1           	(  0.004%)
+                    icmp6: 7           	(  0.029%)
+                     igmp: 34          	(  0.142%)
+                     ipv4: 22927       	( 95.817%)
+                     ipv6: 13          	(  0.054%)
+            ipv6_hop_opts: 7           	(  0.029%)
+                      tcp: 22164       	( 92.628%)
+                      udp: 184         	(  0.769%)
+                     vlan: 1           	(  0.004%)
+--------------------------------------------------
+Module Statistics
+--------------------------------------------------
+ac_bnfa
+                 searches: 22027
+                  matches: 58299
+                    bytes: 4005188
+--------------------------------------------------
+arp_spoof
+                  packets: 912
+--------------------------------------------------
+back_orifice
+                  packets: 184
+--------------------------------------------------
+binder
+              raw_packets: 1586
+                new_flows: 50
+          service_changes: 3
+                 inspects: 1636
+--------------------------------------------------
+dce_smb
+                 sessions: 1
+               v2_hdr_err: 1
+  max_concurrent_sessions: 1
+      total_smb2_sessions: 1
+         v2_ioctl_ignored: 1
+--------------------------------------------------
+detection
+                 analyzed: 23928
+               hard_evals: 28163
+             raw_searches: 18158
+          cooked_searches: 3869
+             pkt_searches: 22027
+                   alerts: 22
+             total_alerts: 22
+                   logged: 22
+--------------------------------------------------
+dns
+                  packets: 4
+                 requests: 2
+                responses: 2
+--------------------------------------------------
+ips_actions
+                    alert: 22
+--------------------------------------------------
+normalizer
+        test_tcp_trim_win: 55
+        test_tcp_ips_data: 10
+--------------------------------------------------
+port_scan
+                  packets: 22392
+                 trackers: 47
+--------------------------------------------------
+search_engine
+               max_queued: 716
+            total_flushed: 27400
+            total_inserts: 58299
+             total_unique: 27400
+     non_qualified_events: 55539
+         qualified_events: 24
+--------------------------------------------------
+ssh
+                  packets: 34
+              total_bytes: 5927
+  max_concurrent_sessions: 1
+--------------------------------------------------
+ssl
+                  packets: 65
+                  decoded: 65
+             client_hello: 1
+            change_cipher: 1
+       client_application: 1
+       server_application: 53
+     unrecognized_records: 10
+  max_concurrent_sessions: 1
+--------------------------------------------------
+stream
+                    flows: 50
+             total_prunes: 16
+idle_prunes_proto_timeout: 16
+        ip_timeout_prunes: 7
+       udp_timeout_prunes: 7
+      icmp_timeout_prunes: 2
+--------------------------------------------------
+stream_icmp
+                 sessions: 4
+                      max: 4
+                  created: 4
+                 released: 4
+--------------------------------------------------
+stream_ip
+                 sessions: 16
+                      max: 16
+                  created: 21
+                 released: 21
+                 timeouts: 5
+              total_bytes: 272
+--------------------------------------------------
+stream_tcp
+                 sessions: 9
+                      max: 9
+                  created: 9
+                 released: 9
+            stale_packets: 3
+             instantiated: 9
+                   setups: 9
+                 restarts: 3
+          invalid_seq_num: 45
+             syn_trackers: 4
+            data_trackers: 5
+              segs_queued: 13919
+            segs_released: 13919
+                segs_used: 13917
+          rebuilt_packets: 1874
+          rebuilt_buffers: 33
+            rebuilt_bytes: 1102358
+                 overlaps: 10
+                     gaps: 55
+    payload_fully_trimmed: 10
+          client_cleanups: 4
+          server_cleanups: 4
+                     syns: 4
+                 syn_acks: 4
+                   resets: 4
+                     fins: 4
+        partial_fallbacks: 7
+                 max_segs: 223
+                max_bytes: 16733
+        keep_alive_probes: 1
+--------------------------------------------------
+stream_udp
+                 sessions: 21
+                      max: 21
+                  created: 22
+                 released: 22
+                 timeouts: 1
+              total_bytes: 46639
+--------------------------------------------------
+wizard
+                tcp_scans: 575
+                 tcp_hits: 3
+               tcp_misses: 5
+                udp_scans: 19
+               udp_misses: 19
+--------------------------------------------------
+Summary Statistics
+--------------------------------------------------
+process
+                  signals: 1
+--------------------------------------------------
+timing
+                  runtime: 00:06:21
+                  seconds: 381.965188
+                 pkts/sec: 63
+o")~   Snort exiting

@@ -33,6 +33,8 @@ The root `types` package is intentionally generic. It currently contains only ru
 - `NeedAlert`: when true, `alert_json = { file = true }` is injected, `alert_json.txt` is removed before start, and new alert lines are inserted into `alerts.db`.
 All required runtime values must be supplied on each run. `wrap2` does not load or save `wrap.db`.
 
+`alert_json.txt` and `snort_output.txt` are removed at the beginning of every `Start()` call so stale output is not confused with the current run.
+
 ## Runner Interface
 
 `Runner` supports:

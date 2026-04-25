@@ -13,3 +13,12 @@ wrap/config/rules.db
 analyser/snort_output.txt
 wrap/snort_output.txt
 wrap/snort_output.txt
+
+*.rules
+*.json
+*.lua
+*.zip
+*.pcap
+*.csv
+*.states
+alert_json.txt

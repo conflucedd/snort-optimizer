@@ -47,6 +47,9 @@ func (r *Runner) Start() error {
 	if r.runInfo.Running {
 		return fmt.Errorf("snort is already running with pid %d", r.runInfo.PID)
 	}
+	if err := cleanupRunFiles(r.cfg.SnortWorkingDir); err != nil {
+		return err
+	}
 	if err := rules.EnsureDB(r.cfg.SnortWorkingDir, r.logger); err != nil {
 		return err
 	}
@@ -60,9 +63,6 @@ func (r *Runner) Start() error {
 	if r.cfg.NeedAlert {
 		if err := alerts.EnsureDB(r.cfg.SnortWorkingDir); err != nil {
 			return err
-		}
-		if err := os.Remove(alerts.AlertJSONPath(r.cfg.SnortWorkingDir)); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("remove alert_json.txt: %w", err)
 		}
 	}
 
@@ -202,6 +202,19 @@ func (r *Runner) attachOutput(cmd *exec.Cmd) error {
 	cmd.Stdout = file
 	cmd.Stderr = file
 	r.outputFile = file
+	return nil
+}
+
+func cleanupRunFiles(snortWorkingDir string) error {
+	paths := []string{
+		alerts.AlertJSONPath(snortWorkingDir),
+		filepath.Join(snortWorkingDir, "snort_output.txt"),
+	}
+	for _, path := range paths {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("remove %s: %w", path, err)
+		}
+	}
 	return nil
 }
 

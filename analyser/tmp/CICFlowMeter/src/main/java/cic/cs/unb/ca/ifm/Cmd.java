@@ -1,19 +1,19 @@
 package cic.cs.unb.ca.ifm;
 
-import cic.cs.unb.ca.flow.FlowMgr;
 import cic.cs.unb.ca.jnetpcap.*;
 import cic.cs.unb.ca.jnetpcap.worker.FlowGenListener;
 import org.apache.commons.io.FilenameUtils;
 import org.jnetpcap.PcapClosedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import cic.cs.unb.ca.jnetpcap.worker.InsertCsvRow;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static cic.cs.unb.ca.Sys.FILE_SEP;
+import static cic.cs.unb.ca.jnetpcap.Utils.LINE_SEP;
 
 public class Cmd {
 
@@ -28,7 +28,7 @@ public class Cmd {
         String pcapPath;
         String outPath;
 
-        if (args.length < 1) {
+        if (args.length != 2) {
             printUsage();
             return;
         }
@@ -40,10 +40,6 @@ public class Cmd {
             return;
         }
 
-        if (args.length < 2) {
-            printUsage();
-            return;
-        }
         outPath = args[1];
 
         if (!isPcapFile(in)) {
@@ -51,23 +47,27 @@ public class Cmd {
             return;
         }
 
+        File out = resolveOutputFile(outPath);
+        if (out == null) {
+            return;
+        }
+
         logger.info("Input pcap: {}",pcapPath);
-        logger.info("Output target: {}",outPath);
+        logger.info("Output csv: {}",out.getPath());
 
         logger.info("CICFlowMeter received 1 pcap file");
-        readPcapFile(in.getPath(), outPath,flowTimeout,activityTimeout);
+        readPcapFile(in.getPath(), out,flowTimeout,activityTimeout);
     }
 
     private static void printUsage() {
-        logger.info("Usage: java ... cic.cs.unb.ca.ifm.Cmd <input.pcap> <output.csv|output_dir>");
+        logger.info("Usage: java ... cic.cs.unb.ca.ifm.Cmd <input.pcap> <output.csv>");
     }
 
-    private static void readPcapFile(String inputFile, String outPath, long flowTimeout, long activityTimeout) {
-        if(inputFile==null ||outPath==null ) {
+    private static void readPcapFile(String inputFile, File saveFileFullPath, long flowTimeout, long activityTimeout) {
+        if(inputFile==null || saveFileFullPath==null ) {
             return;
         }
         String fileName = FilenameUtils.getName(inputFile);
-        File saveFileFullPath = resolveOutputFile(fileName, outPath);
 
         if (saveFileFullPath.exists()) {
            if (!saveFileFullPath.delete()) {
@@ -76,7 +76,7 @@ public class Cmd {
         }
 
         FlowGenerator flowGen = new FlowGenerator(true, flowTimeout, activityTimeout);
-        flowGen.addFlowListener(new FlowListener(fileName,outPath));
+        flowGen.addFlowListener(new FlowListener(fileName, saveFileFullPath));
         boolean readIP6 = false;
         boolean readIP4 = true;
         PacketReader packetReader = new PacketReader(inputFile, readIP4, readIP6);
@@ -130,13 +130,13 @@ public class Cmd {
 
         private String fileName;
 
-        private String outPath;
+        private File outputFile;
 
         private long cnt;
 
-        public FlowListener(String fileName, String outPath) {
+        public FlowListener(String fileName, File outputFile) {
             this.fileName = fileName;
-            this.outPath = outPath;
+            this.outputFile = outputFile;
         }
 
         @Override
@@ -145,7 +145,7 @@ public class Cmd {
             String flowDump = flow.dumpFlowBasedFeaturesEx();
             List<String> flowStringList = new ArrayList<>();
             flowStringList.add(flowDump);
-            InsertCsvRow.insert(FlowFeature.getHeader(),flowStringList,outPath,fileName+ FlowMgr.FLOW_SUFFIX);
+            insertRows(FlowFeature.getHeader(), flowStringList, outputFile);
 
             cnt++;
 
@@ -155,38 +155,28 @@ public class Cmd {
         }
     }
 
-    private static File resolveOutputFile(String inputFileName, String outPath) {
+    private static File resolveOutputFile(String outPath) {
         File out = new File(outPath);
-        if (outPath.toLowerCase().endsWith(".csv")) {
-            File parent = out.getParentFile();
-            if (parent != null && !parent.exists()) {
-                parent.mkdirs();
-            }
-            return out;
-        }
 
         if (out.exists() && out.isDirectory()) {
-            return new File(out, inputFileName + FlowMgr.FLOW_SUFFIX);
+            logger.info("Output must be a csv file path, not a directory! -> {}", outPath);
+            return null;
         }
 
-        if (outPath.endsWith(FILE_SEP)) {
-            return new File(outPath + inputFileName + FlowMgr.FLOW_SUFFIX);
-        }
-
-        if (out.exists()) {
-            return out;
+        if (!outPath.toLowerCase().endsWith(".csv")) {
+            logger.info("Output path must end with .csv! -> {}", outPath);
+            return null;
         }
 
         File parent = out.getParentFile();
-        if (parent != null) {
-            if (!parent.exists()) {
-                parent.mkdirs();
+        if (parent != null && !parent.exists()) {
+            if (!parent.mkdirs()) {
+                logger.info("Output directory can not be created! -> {}", parent.getPath());
+                return null;
             }
-            return out;
         }
 
-        out.mkdirs();
-        return new File(out, inputFileName + FlowMgr.FLOW_SUFFIX);
+        return out;
     }
 
     private static boolean isPcapFile(File file) {
@@ -213,6 +203,44 @@ public class Cmd {
             }
         }
         return count > 0 ? count - 1 : 0;
+    }
+
+    private static void insertRows(String header, List<String> rows, File file) {
+        if (file == null || rows == null || rows.size() <= 0) {
+            String ex = String.format("file=%s", file);
+            throw new IllegalArgumentException(ex);
+        }
+
+        FileOutputStream output = null;
+        try {
+            if (file.exists()) {
+                output = new FileOutputStream(file, true);
+            } else {
+                if (!file.createNewFile()) {
+                    logger.debug("Output csv can not be created: {}", file.getPath());
+                    return;
+                }
+                output = new FileOutputStream(file);
+                if (header != null) {
+                    output.write((header + LINE_SEP).getBytes());
+                }
+            }
+
+            for (String row : rows) {
+                output.write((row + LINE_SEP).getBytes());
+            }
+        } catch (IOException e) {
+            logger.debug(e.getMessage());
+        } finally {
+            try {
+                if (output != null) {
+                    output.flush();
+                    output.close();
+                }
+            } catch (IOException e) {
+                logger.debug(e.getMessage());
+            }
+        }
     }
 
 }

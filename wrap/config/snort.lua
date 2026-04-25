@@ -276,13 +276,19 @@ rate_filter =
 if ( tweaks ~= nil ) then
     include(tweaks .. '.lua')
 end
--- alert_fast = {
--- 	file = false,          -- 写文件
--- 	--filename = 'alert_fast.txt',  -- 可选：自定义文件名（有的版本支持）
--- }
+alert_fast = {
+	file = false,          -- 写文件
+	--filename = 'alert_fast.txt',  -- 可选：自定义文件名（有的版本支持）
+}
 
 alert_json =
 {
     file = true,
     -- filename = 'alert.json',  -- 可选（如支持）
+}
+port_scan =
+{
+    scan_types = { all = true },
+    memcap = 10000000,
+    sense_level = 'medium'
 }

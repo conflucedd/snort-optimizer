@@ -89,3 +89,18 @@ for round_id in range(1, MAX_ROUNDS):
 2.  散点图（帕累托前沿）：
     从 SQLite 里提取所有成功的 Round。
     X 轴是耗时，Y 轴是检测率。每个点代表一种裁剪方案。标出最左上角的那个点（耗时最短，检测率最高），这就叫“找到了该环境下的工程最优解”。
+
+输入config，包含AnalyserWorkingDir，snort config配置文件，还有两个pcap
+
+先直接跑，得到漏报率，误报率
+跑空rule得到 base_time
+
+分析分为：
+    系统分析：分析系统的服务，直接精简
+以下均减去base_time
+
+注意以直接跑的作为性能基准，系统分析精简之后的误报率和漏报率作为统计基准
+返回一个channel，不停输出某个Object，里面是进度
+
+
+    
