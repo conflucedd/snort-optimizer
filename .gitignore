@@ -16,7 +16,6 @@ wrap/snort_output.txt
 
 *.rules
 *.json
-*.lua
 *.zip
 *.pcap
 *.csv
