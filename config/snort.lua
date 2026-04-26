@@ -283,6 +283,6 @@ end
 
 alert_json =
 {
-    file = false,
+    file = true,
     -- filename = 'alert.json',  -- 可选（如支持）
 }
