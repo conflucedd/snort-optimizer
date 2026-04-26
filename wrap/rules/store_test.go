@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"snort-optimizer/wrap2/sqliteutil"
+	"snort-optimizer/wrap/sqliteutil"
 )
 
 func TestEnsureDBGenerateAndDisableRule(t *testing.T) {

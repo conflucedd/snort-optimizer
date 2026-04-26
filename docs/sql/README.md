@@ -37,24 +37,24 @@ _ = sql.TailAlerts(ctx, cfg, nil)
 ## 命令行
 
 ```bash
-go run ./sql/cmd init -db tmp/snort.sqlite
-go run ./sql/cmd import-alerts -db tmp/snort.sqlite -alerts tmp/alert_json.txt
-go run ./sql/cmd tail-alerts -db tmp/snort.sqlite -alerts tmp/alert_json.txt
-go run ./sql/cmd import-profiler -db tmp/snort.sqlite -profiler tmp/snort_output.txt -run-id run-001
-go run ./sql/cmd import-rules -db tmp/snort.sqlite -rules tmp/config/rules
+go run ./sql/cmd init --db tmp/snort.sqlite
+go run ./sql/cmd import-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt
+go run ./sql/cmd tail-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt
+go run ./sql/cmd import-profiler --db tmp/snort.sqlite --profiler tmp/snort_output.txt --run-id run-001
+go run ./sql/cmd import-rules --db tmp/snort.sqlite --rules tmp/config/rules
 ```
 
 查询接口输出 JSON：
 
 ```bash
-go run ./sql/cmd query-alerts -db tmp/snort.sqlite -sid 15935 -limit 10
-go run ./sql/cmd query-profiler -db tmp/snort.sqlite -module detection
-go run ./sql/cmd query-rules -db tmp/snort.sqlite -msg DNS -enabled true
+go run ./sql/cmd query-alerts --db tmp/snort.sqlite --sid 15935 --limit 10
+go run ./sql/cmd query-profiler --db tmp/snort.sqlite --module detection
+go run ./sql/cmd query-rules --db tmp/snort.sqlite --msg DNS --enabled true
 ```
 
 规则启停：
 
 ```bash
-go run ./sql/cmd disable-rule -db tmp/snort.sqlite -id 1
-go run ./sql/cmd enable-rule -db tmp/snort.sqlite -id 1
+go run ./sql/cmd disable-rule --db tmp/snort.sqlite --id 1
+go run ./sql/cmd enable-rule --db tmp/snort.sqlite --id 1
 ```

@@ -94,7 +94,7 @@ func main() {
 		id := fs.Int64("id", 0, "Rule row id")
 		must(fs.Parse(os.Args[2:]))
 		if *id <= 0 {
-			fatalf("-id is required")
+			fatalf("--id is required")
 		}
 		must(sqlpkg.SetRuleEnabled(*cfg, *id, cmd == "enable-rule"))
 	default:
@@ -109,7 +109,8 @@ func parseBaseFlags(args []string) sqlpkg.Config {
 	return *cfg
 }
 
-func newBaseFlagSet(name string, _ []string) (*flag.FlagSet, *sqlpkg.Config) {
+func newBaseFlagSet(name string, args []string) (*flag.FlagSet, *sqlpkg.Config) {
+	rejectSingleDashFlags(args)
 	cfg := &sqlpkg.Config{}
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
 	fs.StringVar(&cfg.DBPath, "db", "snort.sqlite", "SQLite database path")
@@ -117,6 +118,14 @@ func newBaseFlagSet(name string, _ []string) (*flag.FlagSet, *sqlpkg.Config) {
 	fs.StringVar(&cfg.ProfilerPath, "profiler", "tmp/snort_output.txt", "Snort stdout/profiler file")
 	fs.StringVar(&cfg.RulesDir, "rules", "tmp/config/rules", "Snort rules directory")
 	return fs, cfg
+}
+
+func rejectSingleDashFlags(args []string) {
+	for _, arg := range args {
+		if len(arg) > 1 && arg[0] == '-' && (len(arg) == 2 || arg[1] != '-') {
+			fatalf("options must use --name form, got %q", arg)
+		}
+	}
 }
 
 func printJSON(v any) {
@@ -143,17 +152,17 @@ commands:
   init
   import-alerts
   tail-alerts
-  import-profiler [-run-id id]
+  import-profiler [--run-id id]
   import-rules
-  query-alerts [-sid n] [-limit n]
-  query-profiler [-run-id id] [-module name] [-metric name]
-  query-rules [-sid n] [-msg text] [-enabled true|false]
-  enable-rule -id n
-  disable-rule -id n
+  query-alerts [--sid n] [--limit n]
+  query-profiler [--run-id id] [--module name] [--metric name]
+  query-rules [--sid n] [--msg text] [--enabled true|false]
+  enable-rule --id n
+  disable-rule --id n
 
 common flags:
-  -db path          SQLite database path
-  -alerts path      alert_json.txt path
-  -profiler path    snort_output.txt path
-  -rules path       rules directory`)
+  --db path          SQLite database path
+  --alerts path      alert_json.txt path
+  --profiler path    snort_output.txt path
+  --rules path       rules directory`)
 }

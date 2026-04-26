@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	commontypes "snort-optimizer/types"
-	"snort-optimizer/wrap2/sqliteutil"
+	"snort-optimizer/wrap/sqliteutil"
 )
 
 func DBPath(snortWorkingDir string) string {
@@ -61,7 +61,7 @@ func SetEnabled(snortWorkingDir string, id int64, enabled bool) error {
 }
 
 func GenerateAllRules(snortWorkingDir string) error {
-	if err := EnsureDB(snortWorkingDir, log.New(os.Stderr, "wrap2 rules: ", log.LstdFlags)); err != nil {
+	if err := EnsureDB(snortWorkingDir, log.New(os.Stderr, "wrap rules: ", log.LstdFlags)); err != nil {
 		return err
 	}
 	rows, err := sqliteutil.QueryJSON(DBPath(snortWorkingDir), "SELECT raw_text FROM rules WHERE enabled = 1 ORDER BY id;")

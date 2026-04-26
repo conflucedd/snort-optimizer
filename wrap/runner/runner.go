@@ -12,9 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"snort-optimizer/wrap2/alerts"
-	"snort-optimizer/wrap2/rules"
-	wraptypes "snort-optimizer/wrap2/types"
+	wraptypes "snort-optimizer/wrap/types"
 )
 
 type Runner struct {
@@ -37,7 +35,7 @@ func New(cfg wraptypes.Config) (*Runner, error) {
 	}
 	return &Runner{
 		cfg:    normalized,
-		logger: log.New(os.Stderr, "wrap2: ", log.LstdFlags),
+		logger: log.New(os.Stderr, "wrap: ", log.LstdFlags),
 	}, nil
 }
 
@@ -50,10 +48,10 @@ func (r *Runner) Start() error {
 	if err := cleanupRunFiles(r.cfg.SnortWorkingDir); err != nil {
 		return err
 	}
-	if err := rules.EnsureDB(r.cfg.SnortWorkingDir, r.logger); err != nil {
+	if err := r.ensureRuleStore(); err != nil {
 		return err
 	}
-	if err := rules.GenerateAllRules(r.cfg.SnortWorkingDir); err != nil {
+	if err := r.generateAllRules(); err != nil {
 		return err
 	}
 	snortBin, daqDir, err := resolveSnortEnv()
@@ -61,7 +59,7 @@ func (r *Runner) Start() error {
 		return err
 	}
 	if r.cfg.NeedAlert {
-		if err := alerts.EnsureDB(r.cfg.SnortWorkingDir); err != nil {
+		if err := r.ensureSQLStore(); err != nil {
 			return err
 		}
 	}
@@ -97,7 +95,7 @@ func (r *Runner) Start() error {
 		r.alertDone = make(chan struct{})
 		go func(done chan struct{}) {
 			defer close(done)
-			if err := alerts.TailToDB(ctx, r.cfg.SnortWorkingDir, r.logger); err != nil {
+			if err := r.tailAlerts(ctx); err != nil {
 				r.logger.Printf("alert tail stopped: %v", err)
 			}
 		}(r.alertDone)
@@ -144,15 +142,15 @@ func (r *Runner) Restart() error {
 }
 
 func (r *Runner) Reset() error {
-	return rules.Reset(r.cfg.SnortWorkingDir)
+	return r.resetSQLStore()
 }
 
 func (r *Runner) EnableRule(ruleID int64) error {
-	return rules.SetEnabled(r.cfg.SnortWorkingDir, ruleID, true)
+	return r.setRuleEnabled(ruleID, true)
 }
 
 func (r *Runner) DisableRule(ruleID int64) error {
-	return rules.SetEnabled(r.cfg.SnortWorkingDir, ruleID, false)
+	return r.setRuleEnabled(ruleID, false)
 }
 
 func (r *Runner) Status() wraptypes.Status {
@@ -178,7 +176,7 @@ func (r *Runner) snortArgs(daqDir string) []string {
 	case wraptypes.ModePCAP:
 		args = append(args, "-r", r.cfg.PcapFile)
 	}
-	args = append(args, "--lua", "ips.rules = [[\ninclude "+rules.AllRulesPath(r.cfg.SnortWorkingDir)+"\n]]")
+	args = append(args, "--lua", "ips.rules = [[\ninclude "+allRulesPath(r.cfg.SnortWorkingDir)+"\n]]")
 	if r.cfg.NeedAlert {
 		args = append(args, "--lua", "alert_json = { file = true }")
 	}
@@ -207,7 +205,7 @@ func (r *Runner) attachOutput(cmd *exec.Cmd) error {
 
 func cleanupRunFiles(snortWorkingDir string) error {
 	paths := []string{
-		alerts.AlertJSONPath(snortWorkingDir),
+		alertJSONPath(snortWorkingDir),
 		filepath.Join(snortWorkingDir, "snort_output.txt"),
 	}
 	for _, path := range paths {

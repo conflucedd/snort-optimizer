@@ -15,7 +15,7 @@ import (
 	"time"
 
 	commontypes "snort-optimizer/types"
-	"snort-optimizer/wrap2/sqliteutil"
+	"snort-optimizer/wrap/sqliteutil"
 )
 
 func DBPath(snortWorkingDir string) string {

@@ -54,6 +54,10 @@ func SetRuleEnabled(cfg Config, id int64, enabled bool) error {
 	return rules.SetEnabled(cfg, id, enabled)
 }
 
+func ResetRules(cfg Config) error {
+	return rules.Reset(cfg)
+}
+
 func fallbackLogger(logger *log.Logger) *log.Logger {
 	if logger != nil {
 		return logger

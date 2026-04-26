@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	wraptypes "snort-optimizer/wrap2/types"
+	wraptypes "snort-optimizer/wrap/types"
 )
 
 func normalizeConfig(input wraptypes.Config) (wraptypes.Config, error) {

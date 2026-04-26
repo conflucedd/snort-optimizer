@@ -152,6 +152,16 @@ func SetEnabled(cfg config.Config, id int64, enabled bool) error {
 	return db.RunScript(cfg.DBPath, []byte(fmt.Sprintf("UPDATE rules SET enabled = %d WHERE id = %d;", value, id)))
 }
 
+func Reset(cfg config.Config) error {
+	if err := schema.Ensure(cfg); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte(`
+DELETE FROM rules;
+DELETE FROM sqlite_sequence WHERE name = 'rules';
+`))
+}
+
 func rowToRule(row map[string]any) types.Rule {
 	return types.Rule{
 		ID:         asInt(row["id"]),

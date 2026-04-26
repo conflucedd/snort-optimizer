@@ -1,8 +1,8 @@
-package wrap2
+package wrap
 
 import (
-	"snort-optimizer/wrap2/runner"
-	wraptypes "snort-optimizer/wrap2/types"
+	"snort-optimizer/wrap/runner"
+	wraptypes "snort-optimizer/wrap/types"
 )
 
 type Config = wraptypes.Config
