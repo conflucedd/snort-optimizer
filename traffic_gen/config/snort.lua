@@ -192,7 +192,9 @@ ips =
         include all.rules
     ]],
 
-    variables = default_variables
+    variables = default_variables,
+
+    states = "rulestates-no-rules-active.states"
 }
 
 -- use these to configure additional rule actions
@@ -277,11 +279,14 @@ if ( tweaks ~= nil ) then
     include(tweaks .. '.lua')
 end
 
-alert_json =
-{
-    file = true
-}
+-- alert_json =
+-- {
+--     file = true
+-- }
 
 alert_fast = {
     file = false
 }
+
+-- profiler = {
+-- }
