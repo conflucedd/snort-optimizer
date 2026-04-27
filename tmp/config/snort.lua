@@ -279,15 +279,15 @@ if ( tweaks ~= nil ) then
     include(tweaks .. '.lua')
 end
 
-alert_json =
-{
-    file = true
-}
+-- alert_json =
+-- {
+--     file = true
+-- }
 
 -- alert_fast = {
 --     file = false
 -- }
 
-profiler = {
+-- profiler = {
     
-}
+-- }

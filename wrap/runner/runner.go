@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	sqlstore "snort-optimizer/sql"
 	wraptypes "snort-optimizer/wrap/types"
 )
 
@@ -45,9 +46,6 @@ func (r *Runner) Start() error {
 	if r.runInfo.Running {
 		return fmt.Errorf("snort is already running with pid %d", r.runInfo.PID)
 	}
-	if err := cleanupRunFiles(r.cfg.SnortWorkingDir); err != nil {
-		return err
-	}
 	if err := r.ensureRuleStore(); err != nil {
 		return err
 	}
@@ -63,6 +61,13 @@ func (r *Runner) Start() error {
 			return err
 		}
 	}
+	var alertTailer *sqlstore.AlertTailer
+	if r.cfg.NeedAlert {
+		alertTailer, err = sqlstore.NewAlertTailer(r.sqlConfig(), r.logger, true)
+		if err != nil {
+			return err
+		}
+	}
 
 	cmd := exec.Command(snortBin, r.snortArgs(daqDir)...)
 	cmd.Dir = r.cfg.SnortWorkingDir
@@ -71,6 +76,9 @@ func (r *Runner) Start() error {
 		return err
 	}
 	if err := cmd.Start(); err != nil {
+		if alertTailer != nil {
+			_ = alertTailer.Close()
+		}
 		if r.outputFile != nil {
 			r.outputFile.Close()
 			r.outputFile = nil
@@ -95,7 +103,7 @@ func (r *Runner) Start() error {
 		r.alertDone = make(chan struct{})
 		go func(done chan struct{}) {
 			defer close(done)
-			if err := r.tailAlerts(ctx); err != nil {
+			if err := alertTailer.Tail(ctx); err != nil {
 				r.logger.Printf("alert tail stopped: %v", err)
 			}
 		}(r.alertDone)
@@ -203,15 +211,10 @@ func (r *Runner) attachOutput(cmd *exec.Cmd) error {
 	return nil
 }
 
-func cleanupRunFiles(snortWorkingDir string) error {
-	paths := []string{
-		alertJSONPath(snortWorkingDir),
-		filepath.Join(snortWorkingDir, "snort_output.txt"),
-	}
-	for _, path := range paths {
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("remove %s: %w", path, err)
-		}
+func cleanupAlertFile(snortWorkingDir string) error {
+	path := alertJSONPath(snortWorkingDir)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove %s: %w", path, err)
 	}
 	return nil
 }
@@ -240,6 +243,11 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 		}
 		if alertDone != nil {
 			<-alertDone
+		}
+		if !r.cfg.NoClean {
+			if err := cleanupAlertFile(r.cfg.SnortWorkingDir); err != nil {
+				r.logger.Printf("cleanup alert json failed: %v", err)
+			}
 		}
 		close(done)
 		return

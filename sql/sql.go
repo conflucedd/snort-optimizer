@@ -15,6 +15,7 @@ import (
 
 type Config = config.Config
 type AlertQuery = alerts.Query
+type AlertTailer = alerts.Tailer
 type ProfilerQuery = profiler.Query
 type RuleQuery = rules.Query
 
@@ -28,6 +29,10 @@ func ImportAlerts(cfg Config, logger *log.Logger) (int, error) {
 
 func TailAlerts(ctx context.Context, cfg Config, logger *log.Logger) error {
 	return alerts.TailFile(ctx, cfg, fallbackLogger(logger))
+}
+
+func NewAlertTailer(cfg Config, logger *log.Logger, startExistingAtEnd bool) (*AlertTailer, error) {
+	return alerts.NewTailer(cfg, fallbackLogger(logger), startExistingAtEnd)
 }
 
 func ListAlerts(cfg Config, q AlertQuery) ([]types.Alert, error) {

@@ -14,4 +14,5 @@ type Config struct {
 	LuaOverrides    []string
 	NeedOutput      bool
 	NeedAlert       bool
+	NoClean         bool
 }

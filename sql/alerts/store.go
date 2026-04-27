@@ -26,6 +26,13 @@ type Query struct {
 	DstAP  string
 }
 
+type Tailer struct {
+	cfg    config.Config
+	logger *log.Logger
+	file   *os.File
+	offset int64
+}
+
 func InsertBatch(cfg config.Config, batch []types.Alert) error {
 	if len(batch) == 0 {
 		return nil
@@ -68,46 +75,81 @@ func ImportFile(cfg config.Config, logger *log.Logger) (int, error) {
 }
 
 func TailFile(ctx context.Context, cfg config.Config, logger *log.Logger) error {
-	cfg = cfg.WithDefaults()
-	if err := schema.Ensure(cfg); err != nil {
+	tailer, err := NewTailer(cfg, logger, false)
+	if err != nil {
 		return err
 	}
-	ticker := time.NewTicker(cfg.TailInterval)
-	defer ticker.Stop()
-	var file *os.File
-	defer func() {
-		if file != nil {
+	return tailer.Tail(ctx)
+}
+
+func NewTailer(cfg config.Config, logger *log.Logger, startExistingAtEnd bool) (*Tailer, error) {
+	cfg = cfg.WithDefaults()
+	if err := schema.Ensure(cfg); err != nil {
+		return nil, err
+	}
+	if logger == nil {
+		logger = log.New(io.Discard, "", 0)
+	}
+	tailer := &Tailer{cfg: cfg, logger: logger}
+	file, err := os.Open(cfg.AlertPath)
+	if os.IsNotExist(err) {
+		return tailer, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("open alert file: %w", err)
+	}
+	tailer.file = file
+	if startExistingAtEnd {
+		stat, err := file.Stat()
+		if err != nil {
 			file.Close()
+			return nil, err
 		}
-	}()
-	for file == nil {
+		tailer.offset = stat.Size()
+	}
+	return tailer, nil
+}
+
+func (t *Tailer) Tail(ctx context.Context) error {
+	ticker := time.NewTicker(t.cfg.TailInterval)
+	defer ticker.Stop()
+	defer t.Close()
+	for t.file == nil {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			opened, err := os.Open(cfg.AlertPath)
+			opened, err := os.Open(t.cfg.AlertPath)
 			if os.IsNotExist(err) {
 				continue
 			}
 			if err != nil {
-				logger.Printf("open alert file failed: %v", err)
+				t.logger.Printf("open alert file failed: %v", err)
 				continue
 			}
-			file = opened
+			t.file = opened
 		}
 	}
-	var offset int64
 	for {
 		select {
 		case <-ctx.Done():
-			_, _ = readFromOffset(cfg, file, &offset, logger)
+			_, _ = t.readAvailable(true)
 			return nil
 		case <-ticker.C:
-			if _, err := readFromOffset(cfg, file, &offset, logger); err != nil {
-				logger.Printf("tail alert file failed: %v", err)
+			if _, err := t.readAvailable(false); err != nil {
+				t.logger.Printf("tail alert file failed: %v", err)
 			}
 		}
 	}
+}
+
+func (t *Tailer) Close() error {
+	if t.file == nil {
+		return nil
+	}
+	err := t.file.Close()
+	t.file = nil
+	return err
 }
 
 func List(cfg config.Config, q Query) ([]types.Alert, error) {
@@ -143,21 +185,45 @@ func List(cfg config.Config, q Query) ([]types.Alert, error) {
 	return out, nil
 }
 
-func readFromOffset(cfg config.Config, file *os.File, offset *int64, logger *log.Logger) (int, error) {
-	stat, err := file.Stat()
+func (t *Tailer) readAvailable(final bool) (int, error) {
+	stat, err := t.file.Stat()
 	if err != nil {
 		return 0, err
 	}
-	if stat.Size() <= *offset {
+	if stat.Size() < t.offset {
+		t.offset = 0
+	}
+	if stat.Size() <= t.offset {
 		return 0, nil
 	}
-	if _, err := file.Seek(*offset, io.SeekStart); err != nil {
+	if _, err := t.file.Seek(t.offset, io.SeekStart); err != nil {
 		return 0, err
 	}
-	counting := &countingReader{Reader: file}
-	n, err := importLines(cfg, counting, logger)
-	*offset += counting.N
-	return n, err
+	buf, err := io.ReadAll(io.LimitReader(t.file, stat.Size()-t.offset))
+	if err != nil {
+		return 0, err
+	}
+	lastNewline := bytes.LastIndexByte(buf, '\n')
+	if lastNewline < 0 {
+		if !final {
+			return 0, nil
+		}
+		lastNewline = len(buf) - 1
+	}
+	complete := buf[:lastNewline+1]
+	if final {
+		complete = buf
+	}
+	n, err := importLineBytes(t.cfg, complete, t.logger)
+	if err != nil {
+		return n, err
+	}
+	t.offset += int64(len(complete))
+	return n, nil
+}
+
+func importLineBytes(cfg config.Config, data []byte, logger *log.Logger) (int, error) {
+	return importLines(cfg, bytes.NewReader(data), logger)
 }
 
 func importLines(cfg config.Config, reader io.Reader, logger *log.Logger) (int, error) {
@@ -193,17 +259,6 @@ func importLines(cfg config.Config, reader io.Reader, logger *log.Logger) (int, 
 	}
 	flush()
 	return imported, scanner.Err()
-}
-
-type countingReader struct {
-	Reader io.Reader
-	N      int64
-}
-
-func (r *countingReader) Read(p []byte) (int, error) {
-	n, err := r.Reader.Read(p)
-	r.N += int64(n)
-	return n, err
 }
 
 func rowToAlert(row map[string]any) types.Alert {

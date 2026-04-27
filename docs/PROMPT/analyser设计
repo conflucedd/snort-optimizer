@@ -1,3 +1,11 @@
+传入AnalyserWorkingDir，SnortConfigPath，规则数据库
+
+把AnalyserWorkingDir作为wrap的SnortWorkingDir
+wrap的config需要need-alert，need-profiler。
+需要覆写--lua,使用自己生成的规则？？ wrap怎么对待规则数据库，需要wrap进行覆写。
+
+	csv转db的工作作为misc。
+
 工程策略函数可以获得的：
 	每个函数自己的Config，规则数据库
 	
@@ -11,11 +19,62 @@
 evaluator作为主调度器。调度这两种策略。
 
 evaluator逻辑：
+	禁用所有规则后Run()得到空性能基准
+	Run()得到性能基准，误报率基准
 	先执行每个工程策略函数
+	然后Run()得到漏报率基准
+
 	再进入round流程
 		*.Analyse()
-		*.Run()
+		*.Run() 后把总体cpu开销和综合准确率存入数据库后用于绘制帕累托前沿图。
 		*.Evaluate()
 		*.Commit()/*Rollback()
 
-	最后直接结束，因为直接修改传入的数据库。
+	最后得出最终的规则裁剪建议 cmd/package
+
+// need alert需要有选项先清空alert数据库
+// need profiler默认清空？不仅要有profiler，还要有基础的cpu占用。
+// 数据库默认不清空，而是递增表名？
+// --clear参数：wrap退出时先检查是否入库完成，完成就删snort_alert.json，默认clear。启动时也要检查（先tail到末尾再启动）
+// cmd时wrap易用性提升
+// 
+
+表1：run（一次运行）
+CREATE TABLE runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    pcap_name TEXT,
+    rule_count INTEGER,
+    runtime REAL,
+    pkt_per_sec REAL,
+    mbps REAL,
+    cpu_user REAL,
+    cpu_sys REAL,
+    memory_kb INTEGER
+);
+表2：metrics（Snort内部指标）
+CREATE TABLE metrics (
+    run_id INTEGER,
+    hard_evals INTEGER,
+    pkt_searches INTEGER,
+    pdu_searches INTEGER,
+    alerts INTEGER,
+    pcre_match_limit INTEGER,
+    match_limit INTEGER,
+    alert_limit INTEGER,
+    tcp_sessions INTEGER,
+    udp_sessions INTEGER,
+    flows INTEGER,
+    rebuilt_packets INTEGER,
+    FOREIGN KEY(run_id) REFERENCES runs(id)
+);
+表3：检测效果（你已有）
+CREATE TABLE detection (
+    run_id INTEGER,
+    alerted_flows INTEGER,
+    false_positive_flows INTEGER,
+    missed_flows INTEGER,
+    fpr REAL,
+    miss_rate REAL,
+    FOREIGN KEY(run_id) REFERENCES runs(id)
+);

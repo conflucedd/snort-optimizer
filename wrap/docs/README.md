@@ -28,10 +28,11 @@ The root `types` package is intentionally generic. It currently contains only ru
 - `PcapFile`: required when `Mode=pcap`.
 - `LuaOverrides`: additional `--lua` values. Each entry is passed as its own argument pair.
 - `NeedOutput`: when true, stdout/stderr are written to `snort_output.txt`.
-- `NeedAlert`: when true, `alert_json = { file = true }` is injected, `alert_json.txt` is removed before start, and new alert lines are inserted into `snort.sqlite`.
+- `NeedAlert`: when true, `alert_json = { file = true }` is injected and new alert lines are inserted into `snort.sqlite`.
+- `NoClean`: when true, keeps `alert_json.txt` after Snort exits. By default, `alert_json.txt` is removed after Snort exits and alert tailing has drained the final line.
 All required runtime values must be supplied on each run. `wrap` does not load or save `wrap.db`.
 
-`alert_json.txt` and `snort_output.txt` are removed at the beginning of every `Start()` call so stale output is not confused with the current run.
+`wrap` does not remove `alert_json.txt` at startup. When alert ingestion is enabled, an existing file is tailed from its current end before Snort starts; if the file does not exist yet, ingestion waits for Snort to create it and then reads from the beginning.
 
 ## Runner Interface
 
@@ -86,6 +87,8 @@ go run ./wrap/cmd \
   --lua 'search_engine = { search_method = "hyperscan" }'
 ```
 
+The CLI only accepts long options such as `--pcap`; single-dash forms are rejected.
+
 ## Limits and Assumptions
 
 - Linux only.
@@ -94,4 +97,4 @@ go run ./wrap/cmd \
 - The shared `sql` package uses the Go SQLite driver; the wrapper no longer depends on the old `wrap/sqliteutil` path for runtime storage.
 - Rule parsing is intentionally shallow. It extracts common header fields and `msg`, `classtype`, `sid`, `gid`, and `rev`; the original rule is preserved in `raw_text`.
 - Empty and commented rule lines are ignored. A bad rule line is logged and skipped.
-- Alert ingestion tails the `alert_json.txt` file created for the current run. `alert_json.txt` is removed before each start; crash/restart file-reopen continuity is intentionally not handled.
+- Alert ingestion tails `alert_json.txt` from the end when it already exists, or from the beginning when Snort creates it after startup. On shutdown, the tailer drains remaining alert lines before default cleanup removes `alert_json.txt`.

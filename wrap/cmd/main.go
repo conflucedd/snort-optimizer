@@ -43,6 +43,7 @@ func main() {
 	fs.Var(&lua, "lua", "Additional Snort --lua override; may be repeated")
 	fs.BoolVar(&cfg.NeedOutput, "need-output", false, "Write Snort stdout/stderr to snort_output.txt")
 	fs.BoolVar(&cfg.NeedAlert, "need-alert", false, "Enable alert_json file output and ingest snort.sqlite")
+	fs.BoolVar(&cfg.NoClean, "noclean", false, "Keep alert_json.txt after Snort exits")
 	if err := rejectSingleDashArgs(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		fs.Usage()
