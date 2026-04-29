@@ -53,7 +53,6 @@ CREATE TABLE IF NOT EXISTS profiler_metrics (
 	source_file TEXT,
 	created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_profiler_run_id ON profiler_metrics (run_id);
 CREATE INDEX IF NOT EXISTS idx_profiler_section_module ON profiler_metrics (section, module);
 CREATE INDEX IF NOT EXISTS idx_profiler_created_at ON profiler_metrics (created_at);
 
@@ -77,7 +76,6 @@ CREATE TABLE IF NOT EXISTS rule_profiler_metrics (
 	source_file TEXT,
 	created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_rule_profiler_run_id ON rule_profiler_metrics (run_id);
 CREATE INDEX IF NOT EXISTS idx_rule_profiler_rule ON rule_profiler_metrics (gid, sid, rev);
 
 CREATE TABLE IF NOT EXISTS module_profile_metrics (
@@ -95,7 +93,6 @@ CREATE TABLE IF NOT EXISTS module_profile_metrics (
 	source_file TEXT,
 	created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_module_profile_run_id ON module_profile_metrics (run_id);
 CREATE INDEX IF NOT EXISTS idx_module_profile_module ON module_profile_metrics (module);
 
 CREATE TABLE IF NOT EXISTS system_profiles (
@@ -106,10 +103,7 @@ CREATE TABLE IF NOT EXISTS system_profiles (
 	samples INTEGER NOT NULL,
 	created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_system_profiles_run_id ON system_profiles (run_id);
-
 CREATE TABLE IF NOT EXISTS rules (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	run_id INTEGER NOT NULL DEFAULT 0,
 	sid INTEGER NOT NULL,
 	gid INTEGER NOT NULL DEFAULT 1,
@@ -126,7 +120,8 @@ CREATE TABLE IF NOT EXISTS rules (
 	enabled INTEGER NOT NULL DEFAULT 1,
 	source_file TEXT,
 	raw_text TEXT NOT NULL,
-	created_at TEXT NOT NULL
+	created_at TEXT NOT NULL,
+	PRIMARY KEY (run_id, gid, sid)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
 CREATE INDEX IF NOT EXISTS idx_rules_sid ON rules (sid);
@@ -138,18 +133,90 @@ CREATE INDEX IF NOT EXISTS idx_rules_enabled ON rules (enabled);
 	migrations := []string{
 		"ALTER TABLE alerts ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
 		"ALTER TABLE rules ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE profiler_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE rule_profiler_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE module_profile_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE system_profiles ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
 	}
 	for _, migration := range migrations {
 		if err := db.RunScript(cfg.DBPath, []byte(migration)); err != nil && !db.IsDuplicateColumn(err) {
 			return err
 		}
 	}
+	if err := migrateRulesPrimaryKey(cfg.DBPath); err != nil {
+		return err
+	}
 	return db.RunScript(cfg.DBPath, []byte(`
 DROP INDEX IF EXISTS idx_rules_source_raw;
 CREATE INDEX IF NOT EXISTS idx_alerts_run_id ON alerts (run_id);
 CREATE INDEX IF NOT EXISTS idx_rules_run_id ON rules (run_id);
+CREATE INDEX IF NOT EXISTS idx_profiler_run_id ON profiler_metrics (run_id);
+CREATE INDEX IF NOT EXISTS idx_rule_profiler_run_id ON rule_profiler_metrics (run_id);
+CREATE INDEX IF NOT EXISTS idx_module_profile_run_id ON module_profile_metrics (run_id);
+CREATE INDEX IF NOT EXISTS idx_system_profiles_run_id ON system_profiles (run_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
 `))
+}
+
+func migrateRulesPrimaryKey(dbPath string) error {
+	needsMigration, err := rulesPrimaryKeyNeedsMigration(dbPath)
+	if err != nil || !needsMigration {
+		return err
+	}
+	return db.RunScript(dbPath, []byte(`
+DROP INDEX IF EXISTS idx_rules_source_raw;
+DROP INDEX IF EXISTS idx_rules_run_source_raw;
+DROP INDEX IF EXISTS idx_rules_sid;
+DROP INDEX IF EXISTS idx_rules_enabled;
+DROP INDEX IF EXISTS idx_rules_run_id;
+CREATE TABLE rules_new (
+	run_id INTEGER NOT NULL DEFAULT 0,
+	sid INTEGER NOT NULL,
+	gid INTEGER NOT NULL DEFAULT 1,
+	rev INTEGER,
+	action TEXT,
+	proto TEXT,
+	src_net TEXT,
+	src_port TEXT,
+	direction TEXT,
+	dst_net TEXT,
+	dst_port TEXT,
+	msg TEXT,
+	classtype TEXT,
+	enabled INTEGER NOT NULL DEFAULT 1,
+	source_file TEXT,
+	raw_text TEXT NOT NULL,
+	created_at TEXT NOT NULL,
+	PRIMARY KEY (run_id, gid, sid)
+);
+INSERT OR IGNORE INTO rules_new (
+	run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at
+)
+SELECT run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at
+FROM rules
+ORDER BY run_id, gid, sid, rowid;
+DROP TABLE rules;
+ALTER TABLE rules_new RENAME TO rules;
+`))
+}
+
+func rulesPrimaryKeyNeedsMigration(dbPath string) (bool, error) {
+	rows, err := db.QueryJSON(dbPath, "PRAGMA table_info(rules);")
+	if err != nil {
+		return false, err
+	}
+	if len(rows) == 0 {
+		return false, nil
+	}
+	pk := map[string]int64{}
+	for _, row := range rows {
+		name, _ := row["name"].(string)
+		if name == "id" {
+			return true, nil
+		}
+		pk[name] = asInt(row["pk"])
+	}
+	return pk["run_id"] != 1 || pk["gid"] != 2 || pk["sid"] != 3, nil
 }
 
 func Reset(cfg config.Config) error {

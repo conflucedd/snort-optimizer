@@ -23,13 +23,15 @@ cfg := sql.Config{
 
 _ = sql.Ensure(cfg)
 _, _ = sql.ImportAlerts(cfg, nil)
-_, _ = sql.ImportProfiler(cfg, 0, nil)
+_, _ = sql.ImportProfiler(cfg, nil)
 _, _ = sql.ImportRules(cfg, nil)
 
 alerts, _ := sql.ListAlerts(cfg, sql.AlertQuery{SID: 15935, Limit: 20})
 metrics, _ := sql.ListProfiler(cfg, sql.ProfilerQuery{Module: "detection"})
 rules, _ := sql.ListRules(cfg, sql.RuleQuery{SID: 15935})
 ```
+
+所有写入、查询和规则启停接口都从 `sql.Config.RunID` 读取运行编号；调用方不设置 `RunID` 时，Go 零值就是默认 `0`。`AlertQuery`、`ProfilerQuery` 和 `RuleQuery` 里的 `RunID` 可用于单次查询覆盖 `cfg.RunID`，一般调用只需要在 `Config` 里设置一次。
 
 tail alert：
 
@@ -43,8 +45,8 @@ _ = sql.TailAlerts(ctx, cfg, nil)
 
 ```bash
 go run ./sql/cmd init --db tmp/snort.sqlite
-go run ./sql/cmd import-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt
-go run ./sql/cmd tail-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt
+go run ./sql/cmd import-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt --run-id 1
+go run ./sql/cmd tail-alerts --db tmp/snort.sqlite --alerts tmp/alert_json.txt --run-id 1
 go run ./sql/cmd import-profiler --db tmp/snort.sqlite --profiler tmp/snort_output.txt --run-id 1
 go run ./sql/cmd import-rules --db tmp/snort.sqlite --raw-rule-path tmp/config/rules --run-id 1
 ```
@@ -52,14 +54,16 @@ go run ./sql/cmd import-rules --db tmp/snort.sqlite --raw-rule-path tmp/config/r
 查询接口输出 JSON：
 
 ```bash
-go run ./sql/cmd query-alerts --db tmp/snort.sqlite --sid 15935 --limit 10
+go run ./sql/cmd query-alerts --db tmp/snort.sqlite --run-id 1 --gid 1 --sid 15935 --limit 10
 go run ./sql/cmd query-profiler --db tmp/snort.sqlite --module detection --run-id 1
-go run ./sql/cmd query-rules --db tmp/snort.sqlite --msg DNS --enabled true
+go run ./sql/cmd query-rules --db tmp/snort.sqlite --run-id 1 --gid 1 --sid 15935 --enabled true
 ```
 
 规则启停：
 
 ```bash
-go run ./sql/cmd disable-rule --db tmp/snort.sqlite --id 1
-go run ./sql/cmd enable-rule --db tmp/snort.sqlite --id 1
+go run ./sql/cmd disable-rule --db tmp/snort.sqlite --run-id 1 --gid 1 --sid 15935
+go run ./sql/cmd enable-rule --db tmp/snort.sqlite --run-id 1 --gid 1 --sid 15935
 ```
+
+`rules` 表以 `(run_id, gid, sid)` 为主键；同一个 round 内相同 `gid/sid` 的规则只保留一条记录，不允许同时存在不同 `rev`。`enable-rule` 和 `disable-rule` 会按 `run_id + gid + sid` 更新记录；不传 `--run-id` 时默认只作用于 `run_id = 0`。

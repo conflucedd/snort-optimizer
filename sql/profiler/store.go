@@ -22,7 +22,8 @@ type Query struct {
 	Limit   int
 }
 
-func ImportFile(cfg config.Config, runID int64, logger *log.Logger) (int, error) {
+func ImportFile(cfg config.Config, logger *log.Logger) (int, error) {
+	runID := cfg.RunID
 	file, err := os.Open(cfg.ProfilerPath)
 	if os.IsNotExist(err) {
 		return 0, nil
@@ -63,10 +64,11 @@ func InsertBatch(cfg config.Config, metrics []types.ProfilerMetric) error {
 		if m.CreatedAt == "" {
 			m.CreatedAt = now
 		}
+		runID := effectiveRunID(cfg, m.RunID)
 		fmt.Fprintf(&script, `INSERT INTO profiler_metrics (run_id, section, module, metric, value, percent, unit, raw_line, source_file, created_at)
 VALUES (%d, %s, %s, %s, %g, %g, %s, %s, %s, %s);
 `,
-			m.RunID, db.Quote(m.Section), db.Quote(m.Module), db.Quote(m.Metric),
+			runID, db.Quote(m.Section), db.Quote(m.Module), db.Quote(m.Metric),
 			m.Value, m.Percent, db.Quote(m.Unit), db.Quote(m.RawLine), db.Quote(m.SourceFile), db.Quote(m.CreatedAt),
 		)
 	}
@@ -76,7 +78,7 @@ VALUES (%d, %s, %s, %s, %g, %g, %s, %s, %s, %s);
 
 func List(cfg config.Config, q Query) ([]types.ProfilerMetric, error) {
 	where := []string{"1=1"}
-	where = append(where, fmt.Sprintf("run_id = %d", q.RunID))
+	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
 	if q.Section != "" {
 		where = append(where, "section LIKE "+db.Like(q.Section))
 	}
@@ -116,10 +118,11 @@ func InsertRuleBatch(cfg config.Config, metrics []types.RuleProfilerMetric) erro
 		if m.CreatedAt == "" {
 			m.CreatedAt = now
 		}
+		runID := effectiveRunID(cfg, m.RunID)
 		fmt.Fprintf(&script, `INSERT INTO rule_profiler_metrics (run_id, gid, sid, rev, checks, matches, alerts, time_us, avg_check, avg_match, avg_non_match, timeouts, suspends, rule_time_pct, raw_line, source_file, created_at)
 VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, %d, %d, %g, %s, %s, %s);
 `,
-			m.RunID, m.GID, m.SID, m.Rev, m.Checks, m.Matches, m.Alerts, m.TimeUS,
+			runID, m.GID, m.SID, m.Rev, m.Checks, m.Matches, m.Alerts, m.TimeUS,
 			m.AvgCheck, m.AvgMatch, m.AvgNonMatch, m.Timeouts, m.Suspends, m.RuleTimePct,
 			db.Quote(m.RawLine), db.Quote(m.SourceFile), db.Quote(m.CreatedAt),
 		)
@@ -142,10 +145,11 @@ func InsertModuleBatch(cfg config.Config, metrics []types.ModuleProfileMetric) e
 		if m.CreatedAt == "" {
 			m.CreatedAt = now
 		}
+		runID := effectiveRunID(cfg, m.RunID)
 		fmt.Fprintf(&script, `INSERT INTO module_profile_metrics (run_id, rank, module, layer, checks, time_us, avg_check, caller_pct, total_pct, raw_line, source_file, created_at)
 VALUES (%d, %d, %s, %s, %d, %d, %g, %g, %g, %s, %s, %s);
 `,
-			m.RunID, m.Rank, db.Quote(m.Module), db.Quote(m.Layer), m.Checks, m.TimeUS,
+			runID, m.Rank, db.Quote(m.Module), db.Quote(m.Layer), m.Checks, m.TimeUS,
 			m.AvgCheck, m.CallerPct, m.TotalPct, db.Quote(m.RawLine), db.Quote(m.SourceFile), db.Quote(m.CreatedAt),
 		)
 	}
@@ -160,9 +164,10 @@ func InsertSystemProfile(cfg config.Config, profile types.SystemProfile) error {
 	if profile.CreatedAt == "" {
 		profile.CreatedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	}
+	runID := effectiveRunID(cfg, profile.RunID)
 	script := fmt.Sprintf(`INSERT INTO system_profiles (run_id, avg_cpu, avg_mem_mb, samples, created_at)
 VALUES (%d, %g, %g, %d, %s);`,
-		profile.RunID, profile.AvgCPU, profile.AvgMemMB, profile.Samples, db.Quote(profile.CreatedAt))
+		runID, profile.AvgCPU, profile.AvgMemMB, profile.Samples, db.Quote(profile.CreatedAt))
 	return db.RunScript(cfg.DBPath, []byte(script))
 }
 
@@ -201,4 +206,11 @@ func asFloat(v any) float64 {
 		return n
 	}
 	return 0
+}
+
+func effectiveRunID(cfg config.Config, runID int64) int64 {
+	if runID != 0 {
+		return runID
+	}
+	return cfg.RunID
 }

@@ -40,8 +40,8 @@ func ListAlerts(cfg Config, q AlertQuery) ([]types.Alert, error) {
 	return alerts.List(cfg, q)
 }
 
-func ImportProfiler(cfg Config, runID int64, logger *log.Logger) (int, error) {
-	return profiler.ImportFile(cfg, runID, fallbackLogger(logger))
+func ImportProfiler(cfg Config, logger *log.Logger) (int, error) {
+	return profiler.ImportFile(cfg, fallbackLogger(logger))
 }
 
 func ListProfiler(cfg Config, q ProfilerQuery) ([]types.ProfilerMetric, error) {
@@ -56,8 +56,8 @@ func ListRules(cfg Config, q RuleQuery) ([]types.Rule, error) {
 	return rules.List(cfg, q)
 }
 
-func SetRuleEnabled(cfg Config, id int64, enabled bool) error {
-	return rules.SetEnabled(cfg, id, enabled)
+func SetRuleEnabled(cfg Config, gid, sid int64, enabled bool) error {
+	return rules.SetEnabled(cfg, gid, sid, enabled)
 }
 
 func ResetRules(cfg Config) error {

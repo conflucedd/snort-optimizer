@@ -275,7 +275,7 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 			}
 		}
 		if r.cfg.NeedProfiler {
-			if _, err := sqlstore.ImportProfiler(r.sqlConfig(), r.cfg.RunID, r.logger); err != nil {
+			if _, err := sqlstore.ImportProfiler(r.sqlConfig(), r.logger); err != nil {
 				r.logger.Printf("import profiler failed: %v", err)
 			}
 		}

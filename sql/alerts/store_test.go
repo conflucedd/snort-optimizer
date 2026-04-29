@@ -9,7 +9,57 @@ import (
 	"testing"
 
 	"snort-optimizer/sql/config"
+	"snort-optimizer/types"
 )
+
+func TestListUsesConfigRunIDByDefault(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Config{
+		DBPath: filepath.Join(dir, "snort.sqlite"),
+		RunID:  7,
+	}
+	if err := InsertBatch(cfg, []types.Alert{
+		{Timestamp: "07/07-20:00:36.492196", Proto: "TCP", GID: 1, SID: 222, Rev: 1, RawJSON: "{}"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := List(cfg, Query{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected one alert for config run id, got %d", len(got))
+	}
+	if got[0].RunID != 7 {
+		t.Fatalf("expected run id 7, got %d", got[0].RunID)
+	}
+}
+
+func TestListFiltersByRuleIdentity(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.Config{
+		DBPath: filepath.Join(dir, "snort.sqlite"),
+		RunID:  7,
+	}
+	alerts := []types.Alert{
+		{Timestamp: "07/07-20:00:36.492196", Proto: "TCP", GID: 1, SID: 222, Rev: 1, RawJSON: "{}"},
+		{Timestamp: "07/07-20:00:37.492196", Proto: "TCP", GID: 2, SID: 222, Rev: 1, RawJSON: "{}"},
+		{Timestamp: "07/07-20:00:38.492196", Proto: "TCP", GID: 1, SID: 333, Rev: 1, RawJSON: "{}"},
+	}
+	if err := InsertBatch(cfg, alerts); err != nil {
+		t.Fatal(err)
+	}
+	got, err := List(cfg, Query{GID: 1, SID: 222, Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected one alert for gid/sid/rev, got %d", len(got))
+	}
+	if got[0].GID != 1 || got[0].SID != 222 || got[0].Rev != 1 {
+		t.Fatalf("unexpected alert identity %d:%d:%d", got[0].GID, got[0].SID, got[0].Rev)
+	}
+}
 
 func TestTailerStartsExistingFileAtEndAndDrainsFinalLine(t *testing.T) {
 	dir := t.TempDir()

@@ -20,6 +20,7 @@ import (
 type Query struct {
 	Limit  int
 	RunID  int64
+	GID    int64
 	SID    int64
 	Proto  string
 	Action string
@@ -155,7 +156,10 @@ func (t *Tailer) Close() error {
 
 func List(cfg config.Config, q Query) ([]types.Alert, error) {
 	where := []string{"1=1"}
-	where = append(where, fmt.Sprintf("run_id = %d", q.RunID))
+	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
+	if q.GID > 0 {
+		where = append(where, fmt.Sprintf("gid = %d", q.GID))
+	}
 	if q.SID > 0 {
 		where = append(where, fmt.Sprintf("sid = %d", q.SID))
 	}
@@ -303,4 +307,11 @@ func asInt(v any) int64 {
 	default:
 		return 0
 	}
+}
+
+func effectiveRunID(cfg config.Config, runID int64) int64 {
+	if runID != 0 {
+		return runID
+	}
+	return cfg.RunID
 }

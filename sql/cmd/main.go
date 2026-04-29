@@ -37,7 +37,7 @@ func main() {
 	case "import-profiler":
 		fs, cfg := newBaseFlagSet("import-profiler", os.Args[2:])
 		must(fs.Parse(os.Args[2:]))
-		n, err := sqlpkg.ImportProfiler(*cfg, cfg.RunID, logger)
+		n, err := sqlpkg.ImportProfiler(*cfg, logger)
 		must(err)
 		fmt.Printf("imported profiler metrics: %d\n", n)
 	case "import-rules":
@@ -49,6 +49,7 @@ func main() {
 		fs, cfg := newBaseFlagSet("query-alerts", os.Args[2:])
 		q := sqlpkg.AlertQuery{}
 		fs.IntVar(&q.Limit, "limit", 100, "Result limit")
+		fs.Int64Var(&q.GID, "gid", 0, "Rule GID")
 		fs.Int64Var(&q.SID, "sid", 0, "Rule SID")
 		fs.StringVar(&q.Proto, "proto", "", "Protocol")
 		fs.StringVar(&q.Action, "action", "", "Alert action")
@@ -92,12 +93,16 @@ func main() {
 		printJSON(rows)
 	case "enable-rule", "disable-rule":
 		fs, cfg := newBaseFlagSet(cmd, os.Args[2:])
-		id := fs.Int64("id", 0, "Rule row id")
+		gid := fs.Int64("gid", 0, "Rule GID")
+		sid := fs.Int64("sid", 0, "Rule SID")
 		must(fs.Parse(os.Args[2:]))
-		if *id <= 0 {
-			fatalf("--id is required")
+		if *gid <= 0 {
+			fatalf("--gid is required")
 		}
-		must(sqlpkg.SetRuleEnabled(*cfg, *id, cmd == "enable-rule"))
+		if *sid <= 0 {
+			fatalf("--sid is required")
+		}
+		must(sqlpkg.SetRuleEnabled(*cfg, *gid, *sid, cmd == "enable-rule"))
 	default:
 		usage()
 		os.Exit(2)
@@ -153,19 +158,20 @@ func usage() {
 
 commands:
   init
-  import-alerts
-  tail-alerts
+  import-alerts [--run-id id]
+  tail-alerts [--run-id id]
   import-profiler [--run-id id]
-  import-rules
-  query-alerts [--sid n] [--limit n]
+  import-rules [--run-id id]
+  query-alerts [--run-id id] [--gid n] [--sid n] [--limit n]
   query-profiler [--run-id id] [--module name] [--metric name]
-  query-rules [--sid n] [--msg text] [--enabled true|false]
-  enable-rule --id n
-  disable-rule --id n
+  query-rules [--run-id id] [--gid n] [--sid n] [--msg text] [--enabled true|false]
+  enable-rule [--run-id id] --gid n --sid n
+  disable-rule [--run-id id] --gid n --sid n
 
 common flags:
   --db path          SQLite database path
   --alerts path      alert_json.txt path
   --profiler path    snort_output.txt path
-  --rules path       rules directory`)
+  --rules path       rules directory
+  --run-id id        Run id for import/query and enable-rule/disable-rule commands`)
 }

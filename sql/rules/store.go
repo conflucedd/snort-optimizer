@@ -138,7 +138,7 @@ VALUES (%d, %d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s);
 
 func List(cfg config.Config, q Query) ([]types.Rule, error) {
 	where := []string{"1=1"}
-	where = append(where, fmt.Sprintf("run_id = %d", q.RunID))
+	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
 	if q.SID > 0 {
 		where = append(where, fmt.Sprintf("sid = %d", q.SID))
 	}
@@ -162,7 +162,7 @@ func List(cfg config.Config, q Query) ([]types.Rule, error) {
 	if limit <= 0 {
 		limit = 100
 	}
-	sql := fmt.Sprintf(`SELECT id,run_id,sid,gid,rev,action,proto,src_net,src_port,direction,dst_net,dst_port,msg,classtype,enabled,source_file,raw_text FROM rules WHERE %s ORDER BY id LIMIT %d;`, strings.Join(where, " AND "), limit)
+	sql := fmt.Sprintf(`SELECT run_id,sid,gid,rev,action,proto,src_net,src_port,direction,dst_net,dst_port,msg,classtype,enabled,source_file,raw_text FROM rules WHERE %s ORDER BY gid, sid LIMIT %d;`, strings.Join(where, " AND "), limit)
 	rows, err := db.QueryJSON(cfg.DBPath, sql)
 	if err != nil {
 		return nil, err
@@ -174,12 +174,12 @@ func List(cfg config.Config, q Query) ([]types.Rule, error) {
 	return out, nil
 }
 
-func SetEnabled(cfg config.Config, id int64, enabled bool) error {
+func SetEnabled(cfg config.Config, gid, sid int64, enabled bool) error {
 	value := 0
 	if enabled {
 		value = 1
 	}
-	return db.RunScript(cfg.DBPath, []byte(fmt.Sprintf("UPDATE rules SET enabled = %d WHERE id = %d;", value, id)))
+	return db.RunScript(cfg.DBPath, []byte(fmt.Sprintf("UPDATE rules SET enabled = %d WHERE run_id = %d AND gid = %d AND sid = %d;", value, cfg.RunID, gid, sid)))
 }
 
 func Reset(cfg config.Config) error {
@@ -188,13 +188,11 @@ func Reset(cfg config.Config) error {
 	}
 	return db.RunScript(cfg.DBPath, []byte(`
 DELETE FROM rules;
-DELETE FROM sqlite_sequence WHERE name = 'rules';
 `))
 }
 
 func rowToRule(row map[string]any) types.Rule {
 	return types.Rule{
-		ID:         asInt(row["id"]),
 		RunID:      asInt(row["run_id"]),
 		SID:        asInt(row["sid"]),
 		GID:        asInt(row["gid"]),
@@ -226,4 +224,11 @@ func asInt(v any) int64 {
 		return int64(n)
 	}
 	return 0
+}
+
+func effectiveRunID(cfg config.Config, runID int64) int64 {
+	if runID != 0 {
+		return runID
+	}
+	return cfg.RunID
 }
