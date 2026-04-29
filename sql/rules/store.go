@@ -18,6 +18,7 @@ import (
 )
 
 type Query struct {
+	RunID     int64
 	SID       int64
 	GID       int64
 	Msg       string
@@ -27,7 +28,11 @@ type Query struct {
 }
 
 func ImportDir(cfg config.Config, logger *log.Logger) (int, error) {
-	records, err := LoadDir(cfg.RulesDir, logger)
+	rulePath := cfg.RawRulePath
+	if rulePath == "" {
+		rulePath = cfg.RulesDir
+	}
+	records, err := LoadPath(rulePath, logger)
 	if err != nil {
 		return 0, err
 	}
@@ -35,6 +40,17 @@ func ImportDir(cfg config.Config, logger *log.Logger) (int, error) {
 		return 0, err
 	}
 	return len(records), nil
+}
+
+func LoadPath(rulePath string, logger *log.Logger) ([]types.Rule, error) {
+	stat, err := os.Stat(rulePath)
+	if err != nil {
+		return nil, fmt.Errorf("stat rules path: %w", err)
+	}
+	if stat.IsDir() {
+		return LoadDir(rulePath, logger)
+	}
+	return LoadFiles([]string{rulePath}, logger)
 }
 
 func LoadDir(rulesDir string, logger *log.Logger) ([]types.Rule, error) {
@@ -49,10 +65,23 @@ func LoadDir(rulesDir string, logger *log.Logger) ([]types.Rule, error) {
 			continue
 		}
 		path := filepath.Join(rulesDir, entry.Name())
+		fileRecords, err := LoadFiles([]string{path}, logger)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, fileRecords...)
+	}
+	return records, nil
+}
+
+func LoadFiles(paths []string, logger *log.Logger) ([]types.Rule, error) {
+	var records []types.Rule
+	for _, path := range paths {
 		file, err := os.Open(path)
 		if err != nil {
 			return nil, fmt.Errorf("open rule file %s: %w", path, err)
 		}
+		source := filepath.Base(path)
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 0, 128*1024), 4*1024*1024)
 		lineNo := 0
@@ -62,7 +91,7 @@ func LoadDir(rulesDir string, logger *log.Logger) ([]types.Rule, error) {
 			if line == "" {
 				continue
 			}
-			record, err := ParseLine(line, entry.Name())
+			record, err := ParseLine(line, source)
 			if err != nil {
 				if !strings.Contains(err.Error(), "comment") {
 					logger.Printf("skip invalid rule %s:%d: %v", path, lineNo, err)
@@ -95,10 +124,10 @@ func InsertBatch(cfg config.Config, records []types.Rule) error {
 		if r.Enabled {
 			enabled = 1
 		}
-		fmt.Fprintf(&script, `INSERT OR IGNORE INTO rules (sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at)
-VALUES (%d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s);
+		fmt.Fprintf(&script, `INSERT OR IGNORE INTO rules (run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at)
+VALUES (%d, %d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s);
 `,
-			r.SID, r.GID, r.Rev, db.Quote(r.Action), db.Quote(r.Proto), db.Quote(r.SrcNet),
+			cfg.RunID, r.SID, r.GID, r.Rev, db.Quote(r.Action), db.Quote(r.Proto), db.Quote(r.SrcNet),
 			db.Quote(r.SrcPort), db.Quote(r.Direction), db.Quote(r.DstNet), db.Quote(r.DstPort),
 			db.Quote(r.Msg), db.Quote(r.Classtype), enabled, db.Quote(r.SourceFile), db.Quote(r.RawText), db.Quote(now),
 		)
@@ -109,6 +138,7 @@ VALUES (%d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s);
 
 func List(cfg config.Config, q Query) ([]types.Rule, error) {
 	where := []string{"1=1"}
+	where = append(where, fmt.Sprintf("run_id = %d", q.RunID))
 	if q.SID > 0 {
 		where = append(where, fmt.Sprintf("sid = %d", q.SID))
 	}
@@ -132,7 +162,7 @@ func List(cfg config.Config, q Query) ([]types.Rule, error) {
 	if limit <= 0 {
 		limit = 100
 	}
-	sql := fmt.Sprintf(`SELECT id,sid,gid,rev,action,proto,src_net,src_port,direction,dst_net,dst_port,msg,classtype,enabled,source_file,raw_text FROM rules WHERE %s ORDER BY id LIMIT %d;`, strings.Join(where, " AND "), limit)
+	sql := fmt.Sprintf(`SELECT id,run_id,sid,gid,rev,action,proto,src_net,src_port,direction,dst_net,dst_port,msg,classtype,enabled,source_file,raw_text FROM rules WHERE %s ORDER BY id LIMIT %d;`, strings.Join(where, " AND "), limit)
 	rows, err := db.QueryJSON(cfg.DBPath, sql)
 	if err != nil {
 		return nil, err
@@ -165,6 +195,7 @@ DELETE FROM sqlite_sequence WHERE name = 'rules';
 func rowToRule(row map[string]any) types.Rule {
 	return types.Rule{
 		ID:         asInt(row["id"]),
+		RunID:      asInt(row["run_id"]),
 		SID:        asInt(row["sid"]),
 		GID:        asInt(row["gid"]),
 		Rev:        asInt(row["rev"]),

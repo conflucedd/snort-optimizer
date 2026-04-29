@@ -10,7 +10,7 @@ import (
 
 func normalizeConfig(input wraptypes.Config) (wraptypes.Config, error) {
 	if strings.TrimSpace(input.SnortWorkingDir) == "" {
-		return input, fmt.Errorf("SnortWorkingDir is required")
+		input.SnortWorkingDir = "."
 	}
 	swd, err := filepath.Abs(input.SnortWorkingDir)
 	if err != nil {
@@ -25,6 +25,28 @@ func normalizeConfig(input wraptypes.Config) (wraptypes.Config, error) {
 		}
 		input.SnortConfigPath = absConfig
 	}
+	if strings.TrimSpace(input.SnortDBPath) != "" {
+		absDB, err := filepath.Abs(input.SnortDBPath)
+		if err != nil {
+			return input, fmt.Errorf("resolve SnortDBPath: %w", err)
+		}
+		input.SnortDBPath = absDB
+	}
+	if strings.TrimSpace(input.RawRulePath) != "" {
+		absRules, err := filepath.Abs(input.RawRulePath)
+		if err != nil {
+			return input, fmt.Errorf("resolve RawRulePath: %w", err)
+		}
+		input.RawRulePath = absRules
+	}
+	if input.Mode == "" {
+		switch {
+		case strings.TrimSpace(input.PcapFile) != "":
+			input.Mode = wraptypes.ModePCAP
+		case strings.TrimSpace(input.Interface) != "":
+			input.Mode = wraptypes.ModeInterface
+		}
+	}
 	if err := validateConfig(input); err != nil {
 		return input, err
 	}
@@ -32,6 +54,9 @@ func normalizeConfig(input wraptypes.Config) (wraptypes.Config, error) {
 }
 
 func validateConfig(cfg wraptypes.Config) error {
+	if strings.TrimSpace(cfg.PcapFile) != "" && strings.TrimSpace(cfg.Interface) != "" {
+		return fmt.Errorf("only one of PcapFile or Interface may be set")
+	}
 	if cfg.Mode != wraptypes.ModeInterface && cfg.Mode != wraptypes.ModePCAP {
 		return fmt.Errorf("Mode must be %q or %q", wraptypes.ModeInterface, wraptypes.ModePCAP)
 	}

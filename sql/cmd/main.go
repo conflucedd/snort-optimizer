@@ -36,9 +36,8 @@ func main() {
 		must(sqlpkg.TailAlerts(ctx, cfg, logger))
 	case "import-profiler":
 		fs, cfg := newBaseFlagSet("import-profiler", os.Args[2:])
-		runID := fs.String("run-id", "", "Profiler run id")
 		must(fs.Parse(os.Args[2:]))
-		n, err := sqlpkg.ImportProfiler(*cfg, *runID, logger)
+		n, err := sqlpkg.ImportProfiler(*cfg, cfg.RunID, logger)
 		must(err)
 		fmt.Printf("imported profiler metrics: %d\n", n)
 	case "import-rules":
@@ -56,6 +55,7 @@ func main() {
 		fs.StringVar(&q.SrcAP, "src", "", "Source address contains")
 		fs.StringVar(&q.DstAP, "dst", "", "Destination address contains")
 		must(fs.Parse(os.Args[2:]))
+		q.RunID = cfg.RunID
 		rows, err := sqlpkg.ListAlerts(*cfg, q)
 		must(err)
 		printJSON(rows)
@@ -63,11 +63,11 @@ func main() {
 		fs, cfg := newBaseFlagSet("query-profiler", os.Args[2:])
 		q := sqlpkg.ProfilerQuery{}
 		fs.IntVar(&q.Limit, "limit", 100, "Result limit")
-		fs.StringVar(&q.RunID, "run-id", "", "Run id")
 		fs.StringVar(&q.Section, "section", "", "Section contains")
 		fs.StringVar(&q.Module, "module", "", "Module contains")
 		fs.StringVar(&q.Metric, "metric", "", "Metric contains")
 		must(fs.Parse(os.Args[2:]))
+		q.RunID = cfg.RunID
 		rows, err := sqlpkg.ListProfiler(*cfg, q)
 		must(err)
 		printJSON(rows)
@@ -82,6 +82,7 @@ func main() {
 		fs.StringVar(&q.Classtype, "classtype", "", "Classtype")
 		fs.StringVar(&enabled, "enabled", "", "true or false")
 		must(fs.Parse(os.Args[2:]))
+		q.RunID = cfg.RunID
 		if enabled == "true" || enabled == "false" {
 			value := enabled == "true"
 			q.Enabled = &value
@@ -117,6 +118,8 @@ func newBaseFlagSet(name string, args []string) (*flag.FlagSet, *sqlpkg.Config) 
 	fs.StringVar(&cfg.AlertPath, "alerts", "tmp/alert_json.txt", "Snort alert_json file")
 	fs.StringVar(&cfg.ProfilerPath, "profiler", "tmp/snort_output.txt", "Snort stdout/profiler file")
 	fs.StringVar(&cfg.RulesDir, "rules", "tmp/config/rules", "Snort rules directory")
+	fs.StringVar(&cfg.RawRulePath, "raw-rule-path", "", "Raw rule file or directory; defaults to --rules")
+	fs.Int64Var(&cfg.RunID, "run-id", 0, "Run id")
 	return fs, cfg
 }
 

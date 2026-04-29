@@ -19,6 +19,7 @@ import (
 
 type Query struct {
 	Limit  int
+	RunID  int64
 	SID    int64
 	Proto  string
 	Action string
@@ -47,10 +48,10 @@ func InsertBatch(cfg config.Config, batch []types.Alert) error {
 		if a.CreatedAt == "" {
 			a.CreatedAt = now
 		}
-		fmt.Fprintf(&script, `INSERT INTO alerts (timestamp, pkt_num, proto, pkt_gen, pkt_len, dir, src_ap, dst_ap, gid, sid, rev, rule, action, raw_json, source_file, created_at)
-VALUES (%s, %d, %s, %s, %d, %s, %s, %s, %d, %d, %d, %s, %s, %s, %s, %s);
+		fmt.Fprintf(&script, `INSERT INTO alerts (run_id, timestamp, pkt_num, proto, pkt_gen, pkt_len, dir, src_ap, dst_ap, gid, sid, rev, rule, action, raw_json, source_file, created_at)
+VALUES (%d, %s, %d, %s, %s, %d, %s, %s, %s, %d, %d, %d, %s, %s, %s, %s, %s);
 `,
-			db.Quote(a.Timestamp), a.PktNum, db.Quote(a.Proto), db.Quote(a.PktGen), a.PktLen,
+			cfg.RunID, db.Quote(a.Timestamp), a.PktNum, db.Quote(a.Proto), db.Quote(a.PktGen), a.PktLen,
 			db.Quote(a.Dir), db.Quote(a.SrcAP), db.Quote(a.DstAP), a.GID, a.SID, a.Rev,
 			db.Quote(a.Rule), db.Quote(a.Action), db.Quote(a.RawJSON), db.Quote(cfg.AlertPath), db.Quote(a.CreatedAt),
 		)
@@ -154,6 +155,7 @@ func (t *Tailer) Close() error {
 
 func List(cfg config.Config, q Query) ([]types.Alert, error) {
 	where := []string{"1=1"}
+	where = append(where, fmt.Sprintf("run_id = %d", q.RunID))
 	if q.SID > 0 {
 		where = append(where, fmt.Sprintf("sid = %d", q.SID))
 	}
@@ -173,7 +175,7 @@ func List(cfg config.Config, q Query) ([]types.Alert, error) {
 	if limit <= 0 {
 		limit = 100
 	}
-	sql := fmt.Sprintf(`SELECT id,timestamp,pkt_num,proto,pkt_gen,pkt_len,dir,src_ap,dst_ap,gid,sid,rev,rule,action,raw_json,created_at FROM alerts WHERE %s ORDER BY id DESC LIMIT %d;`, strings.Join(where, " AND "), limit)
+	sql := fmt.Sprintf(`SELECT id,run_id,timestamp,pkt_num,proto,pkt_gen,pkt_len,dir,src_ap,dst_ap,gid,sid,rev,rule,action,raw_json,created_at FROM alerts WHERE %s ORDER BY id DESC LIMIT %d;`, strings.Join(where, " AND "), limit)
 	rows, err := db.QueryJSON(cfg.DBPath, sql)
 	if err != nil {
 		return nil, err
@@ -264,6 +266,7 @@ func importLines(cfg config.Config, reader io.Reader, logger *log.Logger) (int, 
 func rowToAlert(row map[string]any) types.Alert {
 	return types.Alert{
 		ID:        asInt(row["id"]),
+		RunID:     asInt(row["run_id"]),
 		Timestamp: asString(row["timestamp"]),
 		PktNum:    asInt(row["pkt_num"]),
 		Proto:     asString(row["proto"]),

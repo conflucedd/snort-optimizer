@@ -72,6 +72,10 @@ func Like(value string) string {
 	return Quote("%" + value + "%")
 }
 
+func IsDuplicateColumn(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "duplicate column name")
+}
+
 func sqlOpen(dbPath string) (*sql.DB, error) {
 	if err := EnsureParent(dbPath); err != nil {
 		return nil, err

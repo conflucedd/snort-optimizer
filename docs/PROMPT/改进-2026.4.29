@@ -1,0 +1,11 @@
+1.使wrap的cli更加易用（module调用保持不变），删去--mode选项，直接根据--pcap或--iface确定，--swd默认是当前文件夹。
+
+2.改变wrap的逻辑，仍然保持使用--lua覆盖include的rule。但需要两个参数raw-rule-path和snort-db-path。逻辑：若db-path不存在，则调用sql使用raw-rule-path生成rule-table，否则直接使用rule-db生产all.rules。（这条好像本来是满足的，但是我不确定）
+
+3.改变sql package的逻辑。
+  （1）目前sql的profiler功能只生成了rule的规则统计，还需要module的规则统计，示例同样在tmp/snort_output.txt，（分别对应rule profile和module profile），除了这两个直接生成的，还需要一个通过系统统计的总体snort性能SystemProfile，也写入types文件夹，类型先只包含cpu和mem占用的平均值（注意snort的多线程），需要wrap在启用need-profiler时自己分析并记录（注意前两个只有snort结束了才有，最后一个要不停地记录）。
+  （2）因为需要区分多轮次的snort运行结果，需要给alert，rules,RuleProfilerMetric，ModuleProfileMetric，SystemProfile的类型和数据库中的记录对应一个run id。这个功能主要用于性能分析，也就是analyser模块，需要给wrap增加--need-iter参数，才需要启用这个逻辑，从1开始每次递增run-id，便于规则的多round优化和裁剪，否则直接固定为0。
+
+4. wrap的reset函数现在改为直接清除snort数据库。
+  
+其他如果有矛盾或者不明白的地方或者有更好的建议请暂停问我。

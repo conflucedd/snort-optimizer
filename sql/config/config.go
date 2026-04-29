@@ -7,6 +7,8 @@ type Config struct {
 	AlertPath    string
 	ProfilerPath string
 	RulesDir     string
+	RawRulePath  string
+	RunID        int64
 	TailInterval time.Duration
 }
 

@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"os"
+
 	"snort-optimizer/sql/config"
 	"snort-optimizer/sql/db"
 )
@@ -10,6 +12,7 @@ func Ensure(cfg config.Config) error {
 PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS alerts (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	run_id INTEGER NOT NULL DEFAULT 0,
 	timestamp TEXT,
 	pkt_num INTEGER,
 	proto TEXT,
@@ -33,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_alerts_source_file ON alerts (source_file);
 
 CREATE TABLE IF NOT EXISTS profiler_metrics (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	run_id TEXT NOT NULL,
+	run_id INTEGER NOT NULL DEFAULT 0,
 	section TEXT NOT NULL,
 	module TEXT NOT NULL,
 	metric TEXT NOT NULL,
@@ -48,8 +51,60 @@ CREATE INDEX IF NOT EXISTS idx_profiler_run_id ON profiler_metrics (run_id);
 CREATE INDEX IF NOT EXISTS idx_profiler_section_module ON profiler_metrics (section, module);
 CREATE INDEX IF NOT EXISTS idx_profiler_created_at ON profiler_metrics (created_at);
 
+CREATE TABLE IF NOT EXISTS rule_profiler_metrics (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	run_id INTEGER NOT NULL DEFAULT 0,
+	gid INTEGER NOT NULL,
+	sid INTEGER NOT NULL,
+	rev INTEGER NOT NULL,
+	checks INTEGER NOT NULL,
+	matches INTEGER NOT NULL,
+	alerts INTEGER NOT NULL,
+	time_us INTEGER NOT NULL,
+	avg_check REAL NOT NULL,
+	avg_match REAL NOT NULL,
+	avg_non_match REAL NOT NULL,
+	timeouts INTEGER NOT NULL,
+	suspends INTEGER NOT NULL,
+	rule_time_pct REAL NOT NULL,
+	raw_line TEXT NOT NULL,
+	source_file TEXT,
+	created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rule_profiler_run_id ON rule_profiler_metrics (run_id);
+CREATE INDEX IF NOT EXISTS idx_rule_profiler_rule ON rule_profiler_metrics (gid, sid, rev);
+
+CREATE TABLE IF NOT EXISTS module_profile_metrics (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	run_id INTEGER NOT NULL DEFAULT 0,
+	rank INTEGER NOT NULL,
+	module TEXT NOT NULL,
+	layer TEXT NOT NULL,
+	checks INTEGER NOT NULL,
+	time_us INTEGER NOT NULL,
+	avg_check REAL NOT NULL,
+	caller_pct REAL NOT NULL,
+	total_pct REAL NOT NULL,
+	raw_line TEXT NOT NULL,
+	source_file TEXT,
+	created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_module_profile_run_id ON module_profile_metrics (run_id);
+CREATE INDEX IF NOT EXISTS idx_module_profile_module ON module_profile_metrics (module);
+
+CREATE TABLE IF NOT EXISTS system_profiles (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	run_id INTEGER NOT NULL DEFAULT 0,
+	avg_cpu REAL NOT NULL,
+	avg_mem_mb REAL NOT NULL,
+	samples INTEGER NOT NULL,
+	created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_system_profiles_run_id ON system_profiles (run_id);
+
 CREATE TABLE IF NOT EXISTS rules (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	run_id INTEGER NOT NULL DEFAULT 0,
 	sid INTEGER NOT NULL,
 	gid INTEGER NOT NULL DEFAULT 1,
 	rev INTEGER,
@@ -67,9 +122,35 @@ CREATE TABLE IF NOT EXISTS rules (
 	raw_text TEXT NOT NULL,
 	created_at TEXT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_source_raw ON rules (source_file, raw_text);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
 CREATE INDEX IF NOT EXISTS idx_rules_sid ON rules (sid);
 CREATE INDEX IF NOT EXISTS idx_rules_enabled ON rules (enabled);
 `
-	return db.RunScript(cfg.DBPath, []byte(script))
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	migrations := []string{
+		"ALTER TABLE alerts ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE rules ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
+	}
+	for _, migration := range migrations {
+		if err := db.RunScript(cfg.DBPath, []byte(migration)); err != nil && !db.IsDuplicateColumn(err) {
+			return err
+		}
+	}
+	return db.RunScript(cfg.DBPath, []byte(`
+DROP INDEX IF EXISTS idx_rules_source_raw;
+CREATE INDEX IF NOT EXISTS idx_alerts_run_id ON alerts (run_id);
+CREATE INDEX IF NOT EXISTS idx_rules_run_id ON rules (run_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
+`))
+}
+
+func Reset(cfg config.Config) error {
+	for _, path := range []string{cfg.DBPath, cfg.DBPath + "-wal", cfg.DBPath + "-shm"} {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
 }

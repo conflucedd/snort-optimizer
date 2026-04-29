@@ -39,7 +39,7 @@ func ListAlerts(cfg Config, q AlertQuery) ([]types.Alert, error) {
 	return alerts.List(cfg, q)
 }
 
-func ImportProfiler(cfg Config, runID string, logger *log.Logger) (int, error) {
+func ImportProfiler(cfg Config, runID int64, logger *log.Logger) (int, error) {
 	return profiler.ImportFile(cfg, runID, fallbackLogger(logger))
 }
 
@@ -61,6 +61,14 @@ func SetRuleEnabled(cfg Config, id int64, enabled bool) error {
 
 func ResetRules(cfg Config) error {
 	return rules.Reset(cfg)
+}
+
+func Reset(cfg Config) error {
+	return schema.Reset(cfg)
+}
+
+func InsertSystemProfile(cfg Config, profile types.SystemProfile) error {
+	return profiler.InsertSystemProfile(cfg, profile)
 }
 
 func fallbackLogger(logger *log.Logger) *log.Logger {

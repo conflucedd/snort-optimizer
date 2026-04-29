@@ -21,22 +21,30 @@ type Config struct {
     Mode            string
     SnortWorkingDir string
     SnortConfigPath string
+    SnortDBPath     string
+    RawRulePath     string
     Interface       string
     PcapFile        string
     LuaOverrides    []string
+    RunID           int64
     NeedOutput      bool
     NeedAlert       bool
+    NeedProfiler    bool
 }
 ```
 
 - `Mode`：运行模式，取值为 `wrap.ModeInterface` 或 `wrap.ModePCAP`。
-- `SnortWorkingDir`：必填，Snort 工作目录。
+- `SnortWorkingDir`：Snort 工作目录；为空时使用当前目录。
 - `SnortConfigPath`：必填，Snort Lua 配置文件路径。
+- `SnortDBPath`：SQLite 数据库路径；为空时使用 `SnortWorkingDir/snort.sqlite`。
+- `RawRulePath`：初始化规则表的 `.rules` 文件或目录；为空时使用 `SnortWorkingDir/rules`。
 - `Interface`：`ModeInterface` 模式必填。
 - `PcapFile`：`ModePCAP` 模式必填。
 - `LuaOverrides`：额外传给 Snort 的 `--lua` 覆写项。
+- `RunID`：写入 alert/rule/profiler/system profile 记录的运行编号，默认 `0`。
 - `NeedOutput`：为 `true` 时只把 Snort stdout/stderr 写入 `snort_output.txt`，不会自动导入性能统计。
 - `NeedAlert`：为 `true` 时启用 `alert_json` 文件输出，并持续写入 `snort.sqlite` 的 `alerts` 表。
+- `NeedProfiler`：为 `true` 时写入 `snort_output.txt`，Snort 结束后导入 rule/module profiler，并记录平均 CPU/RSS。
 
 ### Runner
 
@@ -56,7 +64,7 @@ r, err := wrap.NewRunner(wrap.Config{
 - `Start() error`：初始化数据库和规则，生成 `all.rules`，启动 Snort。
 - `Stop() error`：停止 Snort 进程组，并停止告警 tail。
 - `Restart() error`：先停止再启动。
-- `Reset() error`：清空 `snort.sqlite` 中的 `rules` 表；下次启动会重新从 `rules` 目录导入。
+- `Reset() error`：删除 `snort.sqlite` 及其 WAL/SHM 文件；下次启动会重新从 raw rules 初始化。
 - `EnableRule(ruleID int64) error`：按 rules 表主键启用规则。
 - `DisableRule(ruleID int64) error`：按 rules 表主键禁用规则。
 - `Status() Status`：返回运行状态和生效配置。
@@ -70,25 +78,31 @@ r, err := wrap.NewRunner(wrap.Config{
 SNORT_DIR=/path/to/snort/bin-dir \
 DAQ_DIR=/path/to/daq-dir \
 go run ./wrap/cmd \
-  --swd /tmp/snort-work \
-  --mode pcap \
   --pcap /tmp/sample.pcap \
+  --swd /tmp/snort-work \
   --config /path/to/snort.lua \
+  --raw-rule-path /path/to/rules \
+  --snort-db-path /tmp/snort-work/snort.sqlite \
+  --run-id 1 \
   --need-output \
   --need-alert \
+  --need-profiler \
   --lua 'search_engine = { search_method = "hyperscan" }'
 ```
 
 参数：
 
-- `--swd`：Snort 工作目录。
-- `--mode`：`interface` 或 `pcap`。
+- `--swd`：Snort 工作目录，默认当前目录。
 - `--iface`：网卡模式使用的接口名。
 - `--pcap`：pcap 模式使用的文件路径。
 - `--config`：Snort Lua 配置文件路径。
+- `--raw-rule-path`：初始化规则表的 `.rules` 文件或目录。
+- `--snort-db-path`：SQLite 数据库路径。
+- `--run-id`：运行编号，默认 `0`。
 - `--lua`：额外 Lua 覆写项，可重复。
 - `--need-output`：写入 `snort_output.txt`。
 - `--need-alert`：启用告警文件并导入 `snort.sqlite`。
+- `--need-profiler`：导入 rule/module profiler，并记录系统 CPU/RSS。
 
 ## 环境变量
 

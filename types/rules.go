@@ -2,6 +2,7 @@ package types
 
 type Rule struct {
 	ID         int64  `json:"id"`
+	RunID      int64  `json:"run_id"`
 	SID        int64  `json:"sid"`
 	GID        int64  `json:"gid"`
 	Rev        int64  `json:"rev"`

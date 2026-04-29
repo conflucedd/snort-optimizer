@@ -1,6 +1,5 @@
 go run . \
   --swd /home/c/snort-optimizer/config/ \
-  --mode pcap \
   --config /home/c/snort-optimizer/config/snort.lua \
   --need-output \
   --pcap /home/c/snort-optimizer

@@ -2,6 +2,7 @@ package types
 
 type Alert struct {
 	ID        int64  `json:"id,omitempty"`
+	RunID     int64  `json:"run_id"`
 	Timestamp string `json:"timestamp"`
 	PktNum    int64  `json:"pkt_num"`
 	Proto     string `json:"proto"`

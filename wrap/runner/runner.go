@@ -27,6 +27,8 @@ type Runner struct {
 	outputFile *os.File
 	alertStop  context.CancelFunc
 	alertDone  chan struct{}
+	systemStop context.CancelFunc
+	systemDone chan systemProfileResult
 }
 
 func New(cfg wraptypes.Config) (*Runner, error) {
@@ -107,6 +109,12 @@ func (r *Runner) Start() error {
 				r.logger.Printf("alert tail stopped: %v", err)
 			}
 		}(r.alertDone)
+	}
+	if r.cfg.NeedProfiler {
+		ctx, cancel := context.WithCancel(context.Background())
+		r.systemStop = cancel
+		r.systemDone = make(chan systemProfileResult, 1)
+		go monitorSystemProfile(ctx, cmd.Process.Pid, r.cfg.RunID, r.systemDone)
 	}
 
 	go r.waitForExit(cmd, r.waitDone)
@@ -195,7 +203,7 @@ func (r *Runner) snortArgs(daqDir string) []string {
 }
 
 func (r *Runner) attachOutput(cmd *exec.Cmd) error {
-	if !r.cfg.NeedOutput {
+	if !r.cfg.NeedOutput && !r.cfg.NeedProfiler {
 		cmd.Stdout = io.Discard
 		cmd.Stderr = io.Discard
 		return nil
@@ -232,8 +240,12 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 		}
 		alertStop := r.alertStop
 		alertDone := r.alertDone
+		systemStop := r.systemStop
+		systemDone := r.systemDone
 		r.alertStop = nil
 		r.alertDone = nil
+		r.systemStop = nil
+		r.systemDone = nil
 		r.cmd = nil
 		r.waitDone = nil
 		r.runInfo.Running = false
@@ -243,6 +255,24 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 		}
 		if alertDone != nil {
 			<-alertDone
+		}
+		if systemStop != nil {
+			systemStop()
+		}
+		if systemDone != nil {
+			result := <-systemDone
+			if result.err != nil {
+				r.logger.Printf("system profiler failed: %v", result.err)
+			} else if result.profile.Samples > 0 {
+				if err := sqlstore.InsertSystemProfile(r.sqlConfig(), result.profile); err != nil {
+					r.logger.Printf("insert system profile failed: %v", err)
+				}
+			}
+		}
+		if r.cfg.NeedProfiler {
+			if _, err := sqlstore.ImportProfiler(r.sqlConfig(), r.cfg.RunID, r.logger); err != nil {
+				r.logger.Printf("import profiler failed: %v", err)
+			}
 		}
 		if !r.cfg.NoClean {
 			if err := cleanupAlertFile(r.cfg.SnortWorkingDir); err != nil {
@@ -263,6 +293,8 @@ func (r *Runner) clearStopped() {
 	r.waitDone = nil
 	r.alertStop = nil
 	r.alertDone = nil
+	r.systemStop = nil
+	r.systemDone = nil
 	if r.outputFile != nil {
 		r.outputFile.Close()
 		r.outputFile = nil

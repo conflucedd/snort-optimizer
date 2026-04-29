@@ -13,11 +13,21 @@ import (
 const maxRuleList = 1_000_000
 
 func (r *Runner) sqlConfig() sqlstore.Config {
+	dbPath := r.cfg.SnortDBPath
+	if dbPath == "" {
+		dbPath = filepath.Join(r.cfg.SnortWorkingDir, "snort.sqlite")
+	}
+	rawRulePath := r.cfg.RawRulePath
+	if rawRulePath == "" {
+		rawRulePath = filepath.Join(r.cfg.SnortWorkingDir, "rules")
+	}
 	return sqlstore.Config{
-		DBPath:       filepath.Join(r.cfg.SnortWorkingDir, "snort.sqlite"),
+		DBPath:       dbPath,
 		AlertPath:    alertJSONPath(r.cfg.SnortWorkingDir),
 		ProfilerPath: filepath.Join(r.cfg.SnortWorkingDir, "snort_output.txt"),
 		RulesDir:     filepath.Join(r.cfg.SnortWorkingDir, "rules"),
+		RawRulePath:  rawRulePath,
+		RunID:        r.cfg.RunID,
 	}
 }
 
@@ -39,11 +49,7 @@ func (r *Runner) ensureRuleStore() error {
 	if err := r.ensureSQLStore(); err != nil {
 		return err
 	}
-	rules, err := sqlstore.ListRules(cfg, sqlstore.RuleQuery{Limit: 1})
-	if err != nil {
-		return fmt.Errorf("query rules: %w", err)
-	}
-	if dbMissing || len(rules) == 0 {
+	if dbMissing {
 		if _, err := sqlstore.ImportRules(cfg, r.logger); err != nil {
 			return err
 		}
@@ -85,7 +91,7 @@ func (r *Runner) setRuleEnabled(ruleID int64, enabled bool) error {
 }
 
 func (r *Runner) resetSQLStore() error {
-	return sqlstore.ResetRules(r.sqlConfig())
+	return sqlstore.Reset(r.sqlConfig())
 }
 
 func alertJSONPath(snortWorkingDir string) string {

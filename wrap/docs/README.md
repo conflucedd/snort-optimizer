@@ -9,11 +9,11 @@
 - `wrap/runner`: process lifecycle, environment validation, Snort argument construction, and `sql` package integration.
 - `sql`: shared SQLite schema, rule import/query/update, alert import/tail, and profiler import/query.
 - `wrap/types`: wrap-specific types such as `Config`, `RunInfo`, and `Status`.
-- `types`: shared domain types for rules and alerts only.
+- `types`: shared domain types for rules, alerts, and profiler records.
 
 ## Shared Types vs wrap Types
 
-The root `types` package is intentionally generic. It currently contains only rule and alert records that other modules can reuse.
+The root `types` package is intentionally generic. It contains rule, alert, rule profiler, module profiler, and system profile records that other modules can reuse.
 
 `wrap/types` contains objects that belong to the runner boundary, including runtime configuration and process status.
 
@@ -22,13 +22,17 @@ The root `types` package is intentionally generic. It currently contains only ru
 `wrap.Config` fields:
 
 - `Mode`: `interface` or `pcap`.
-- `SnortWorkingDir`: required. Holds `snort.sqlite`, `all.rules`, optional `snort_output.txt`, and optional `alert_json.txt`.
+- `SnortWorkingDir`: defaults to the current directory. Holds `snort.sqlite`, `all.rules`, optional `snort_output.txt`, and optional `alert_json.txt`.
 - `SnortConfigPath`: Snort Lua config path. Relative paths are converted to absolute paths before Snort is started.
+- `SnortDBPath`: SQLite database path. Defaults to `SnortWorkingDir/snort.sqlite`.
+- `RawRulePath`: `.rules` file or directory used to initialize the rule table when the database does not exist. Defaults to `SnortWorkingDir/rules`.
 - `Interface`: required when `Mode=interface`.
 - `PcapFile`: required when `Mode=pcap`.
 - `LuaOverrides`: additional `--lua` values. Each entry is passed as its own argument pair.
+- `RunID`: run id written to alert, rule, profiler, and system profile records. Defaults to `0`.
 - `NeedOutput`: when true, stdout/stderr are written to `snort_output.txt`.
 - `NeedAlert`: when true, `alert_json = { file = true }` is injected and new alert lines are inserted into `snort.sqlite`.
+- `NeedProfiler`: when true, stdout/stderr are written to `snort_output.txt`; after Snort exits, rule/module profiler data is imported and average CPU/RSS is inserted into `system_profiles`.
 - `NoClean`: when true, keeps `alert_json.txt` after Snort exits. By default, `alert_json.txt` is removed after Snort exits and alert tailing has drained the final line.
 All required runtime values must be supplied on each run. `wrap` does not load or save `wrap.db`.
 
@@ -38,10 +42,10 @@ All required runtime values must be supplied on each run. `wrap` does not load o
 
 `Runner` supports:
 
-- `Start()`: validates environment, initializes `snort.sqlite` if needed, imports rules from `SnortWorkingDir/rules/*.rules` when the rules table is empty, regenerates `all.rules`, starts Snort in a separate process group, and records PID/PGID.
+- `Start()`: validates environment, initializes `snort.sqlite` if missing, imports rules from `RawRulePath` only when the database does not exist, regenerates `all.rules`, starts Snort in a separate process group, and records PID/PGID.
 - `Stop()`: terminates the Snort process group and stops the alert tail goroutine.
 - `Restart()`: `Stop()` then `Start()`.
-- `Reset()`: clears the rules table in `snort.sqlite`; the next `Start()` rebuilds it from `SnortWorkingDir/rules/*.rules`.
+- `Reset()`: deletes `snort.sqlite` and its WAL/SHM files; the next `Start()` rebuilds it from `RawRulePath`.
 - `EnableRule(ruleID int64)` and `DisableRule(ruleID int64)`: update `rules.enabled` by database primary key `id`.
 - `Status()`: returns `RunInfo` with `PID`, `PGID`, `Running`, and `StartTime`, plus the effective config.
 
@@ -57,9 +61,12 @@ func main() {
 		Mode:            wrap.ModePCAP,
 		SnortWorkingDir: "/tmp/snort-work",
 		SnortConfigPath: "/home/c/snort-optimizer/wrap/config/snort.lua",
+		RawRulePath:     "/tmp/snort-work/rules",
+		RunID:           1,
 		PcapFile:        "/tmp/sample.pcap",
 		NeedOutput:      true,
 		NeedAlert:       true,
+		NeedProfiler:    true,
 	})
 	if err != nil {
 		panic(err)
@@ -79,11 +86,13 @@ SNORT_DIR=/home/c/snort-optimizer/wrap/snort/build/src \
 DAQ_DIR=/home/c/snort-optimizer/wrap/snort/libdaq/build/lib/daq \
 go run ./wrap/cmd \
   --swd /tmp/snort-work \
-  --mode pcap \
   --pcap /tmp/sample.pcap \
   --config /home/c/snort-optimizer/wrap/config/snort.lua \
+  --raw-rule-path /tmp/snort-work/rules \
+  --run-id 1 \
   --need-output \
   --need-alert \
+  --need-profiler \
   --lua 'search_engine = { search_method = "hyperscan" }'
 ```
 
