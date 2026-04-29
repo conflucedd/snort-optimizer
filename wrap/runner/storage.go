@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,17 +93,6 @@ func (r *Runner) generateAllRules() (int64, error) {
 		return 0, fmt.Errorf("write all.rules: %w", err)
 	}
 	return int64(len(lines)), nil
-}
-
-func (r *Runner) tailAlerts(ctx context.Context) error {
-	return sqlstore.TailAlerts(ctx, r.sqlConfig(), r.logger)
-}
-
-func (r *Runner) setRuleEnabled(ruleID int64, enabled bool) error {
-	if err := r.ensureSQLStore(); err != nil {
-		return err
-	}
-	return sqlstore.SetRuleEnabled(r.sqlConfig(), ruleID, enabled)
 }
 
 func (r *Runner) resetSQLStore() error {

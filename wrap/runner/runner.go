@@ -168,14 +168,6 @@ func (r *Runner) Reset() error {
 	return r.resetSQLStore()
 }
 
-func (r *Runner) EnableRule(ruleID int64) error {
-	return r.setRuleEnabled(ruleID, true)
-}
-
-func (r *Runner) DisableRule(ruleID int64) error {
-	return r.setRuleEnabled(ruleID, false)
-}
-
 func (r *Runner) Status() wraptypes.Status {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -6,7 +6,7 @@
 
 - `wrap`: public entry package with `NewRunner` and type aliases.
 - `wrap/cmd`: CLI entrypoint. It starts Snort, waits for `SIGINT`/`SIGTERM`, then stops Snort.
-- `wrap/runner`: process lifecycle, environment validation, Snort argument construction, and `sql` package integration.
+- `wrap/runner`: process lifecycle, environment validation, Snort argument construction, and direct `sql` package integration.
 - `sql`: shared SQLite schema, rule import/query/update, alert import/tail, and profiler import/query.
 - `wrap/types`: wrap-specific types such as `Config`, `RunInfo`, and `Status`.
 - `types`: shared domain types for rules, alerts, and profiler records.
@@ -46,7 +46,6 @@ All required runtime values must be supplied on each run. `wrap` does not load o
 - `Stop()`: terminates the Snort process group and stops the alert tail goroutine.
 - `Restart()`: `Stop()` then `Start()`.
 - `Reset()`: deletes `snort.sqlite` and its WAL/SHM files; the next `Start()` rebuilds it from `RawRulePath`.
-- `EnableRule(ruleID int64)` and `DisableRule(ruleID int64)`: update `rules.enabled` by database primary key `id`.
 - `Status()`: returns `RunInfo` with `PID`, `PGID`, `Running`, and `StartTime`, plus the effective config.
 
 ## Module Example
@@ -103,7 +102,7 @@ The CLI only accepts long options such as `--pcap`; single-dash forms are reject
 - Linux only.
 - `SNORT_DIR` must point to a directory containing an executable `snort` file.
 - `DAQ_DIR` must point to an existing DAQ directory.
-- The shared `sql` package uses the Go SQLite driver; the wrapper no longer depends on the old `wrap/sqliteutil` path for runtime storage.
+- The shared `sql` package uses the Go SQLite driver. `wrap` calls it directly for database work and does not keep separate alert/rule database packages.
 - Rule parsing is intentionally shallow. It extracts common header fields and `msg`, `classtype`, `sid`, `gid`, and `rev`; the original rule is preserved in `raw_text`.
-- Empty and commented rule lines are ignored. A bad rule line is logged and skipped.
+- Empty lines are ignored. Commented-out Snort rules are imported as disabled rules and are not written to `all.rules`; bad rule lines are logged and skipped.
 - Alert ingestion tails `alert_json.txt` from the end when it already exists, or from the beginning when Snort creates it after startup. On shutdown, the tailer drains remaining alert lines before default cleanup removes `alert_json.txt`.

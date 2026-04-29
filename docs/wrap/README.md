@@ -65,8 +65,6 @@ r, err := wrap.NewRunner(wrap.Config{
 - `Stop() error`：停止 Snort 进程组，并停止告警 tail。
 - `Restart() error`：先停止再启动。
 - `Reset() error`：删除 `snort.sqlite` 及其 WAL/SHM 文件；下次启动会重新从 raw rules 初始化。
-- `EnableRule(ruleID int64) error`：按 rules 表主键启用规则。
-- `DisableRule(ruleID int64) error`：按 rules 表主键禁用规则。
 - `Status() Status`：返回运行状态和生效配置。
 - `Config() Config`：返回生效配置。
 
