@@ -18,6 +18,7 @@ type AlertQuery = alerts.Query
 type AlertTailer = alerts.Tailer
 type ProfilerQuery = profiler.Query
 type RuleQuery = rules.Query
+type TableCount = schema.TableCount
 
 func Ensure(cfg Config) error {
 	return schema.Ensure(cfg)
@@ -69,6 +70,10 @@ func Reset(cfg Config) error {
 
 func InsertSystemProfile(cfg Config, profile types.SystemProfile) error {
 	return profiler.InsertSystemProfile(cfg, profile)
+}
+
+func CountTables(cfg Config) (map[string]TableCount, error) {
+	return schema.CountTables(cfg)
 }
 
 func fallbackLogger(logger *log.Logger) *log.Logger {

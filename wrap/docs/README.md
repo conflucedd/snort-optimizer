@@ -29,7 +29,7 @@ The root `types` package is intentionally generic. It contains rule, alert, rule
 - `Interface`: required when `Mode=interface`.
 - `PcapFile`: required when `Mode=pcap`.
 - `LuaOverrides`: additional `--lua` values. Each entry is passed as its own argument pair.
-- `RunID`: run id written to alert, rule, profiler, and system profile records. Defaults to `0`.
+- `RunID`: run id written to alert, rule, profiler, and system profile records. Defaults to `0`. When non-zero, `wrap` only loads rules already stored for that `run_id`; it does not initialize rules from `RawRulePath`, and missing DB/rules are errors.
 - `NeedOutput`: when true, stdout/stderr are written to `snort_output.txt`.
 - `NeedAlert`: when true, `alert_json = { file = true }` is injected and new alert lines are inserted into `snort.sqlite`.
 - `NeedProfiler`: when true, stdout/stderr are written to `snort_output.txt`; after Snort exits, rule/module profiler data is imported and average CPU/RSS is inserted into `system_profiles`.

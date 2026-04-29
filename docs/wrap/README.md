@@ -41,7 +41,7 @@ type Config struct {
 - `Interface`：`ModeInterface` 模式必填。
 - `PcapFile`：`ModePCAP` 模式必填。
 - `LuaOverrides`：额外传给 Snort 的 `--lua` 覆写项。
-- `RunID`：写入 alert/rule/profiler/system profile 记录的运行编号，默认 `0`。
+- `RunID`：写入 alert/rule/profiler/system profile 记录的运行编号，默认 `0`。非 0 时 `wrap` 只加载数据库中对应 `run_id` 的规则，不会从 `RawRulePath` 初始化；数据库不存在或对应规则不存在会直接报错。
 - `NeedOutput`：为 `true` 时只把 Snort stdout/stderr 写入 `snort_output.txt`，不会自动导入性能统计。
 - `NeedAlert`：为 `true` 时启用 `alert_json` 文件输出，并持续写入 `snort.sqlite` 的 `alerts` 表。
 - `NeedProfiler`：为 `true` 时写入 `snort_output.txt`，Snort 结束后导入 rule/module profiler，并记录平均 CPU/RSS。

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	sqlstore "snort-optimizer/sql"
+	wraptypes "snort-optimizer/wrap/types"
 )
 
 const maxRuleList = 1_000_000
@@ -46,6 +47,22 @@ func (r *Runner) ensureRuleStore() error {
 	} else if err != nil {
 		return fmt.Errorf("stat sql db: %w", err)
 	}
+	if r.cfg.RunID != 0 {
+		if dbMissing {
+			return fmt.Errorf("snort db %s does not exist for run-id %d", cfg.DBPath, r.cfg.RunID)
+		}
+		if err := r.ensureSQLStore(); err != nil {
+			return err
+		}
+		rules, err := sqlstore.ListRules(cfg, sqlstore.RuleQuery{RunID: r.cfg.RunID, Limit: 1})
+		if err != nil {
+			return fmt.Errorf("query rules for run-id %d: %w", r.cfg.RunID, err)
+		}
+		if len(rules) == 0 {
+			return fmt.Errorf("snort db %s has no rules for run-id %d", cfg.DBPath, r.cfg.RunID)
+		}
+		return nil
+	}
 	if err := r.ensureSQLStore(); err != nil {
 		return err
 	}
@@ -57,11 +74,11 @@ func (r *Runner) ensureRuleStore() error {
 	return nil
 }
 
-func (r *Runner) generateAllRules() error {
+func (r *Runner) generateAllRules() (int64, error) {
 	enabled := true
-	rules, err := sqlstore.ListRules(r.sqlConfig(), sqlstore.RuleQuery{Enabled: &enabled, Limit: maxRuleList})
+	rules, err := sqlstore.ListRules(r.sqlConfig(), sqlstore.RuleQuery{RunID: r.cfg.RunID, Enabled: &enabled, Limit: maxRuleList})
 	if err != nil {
-		return fmt.Errorf("query enabled rules: %w", err)
+		return 0, fmt.Errorf("query enabled rules: %w", err)
 	}
 	lines := make([]string, 0, len(rules))
 	for _, rule := range rules {
@@ -74,9 +91,9 @@ func (r *Runner) generateAllRules() error {
 		content += "\n"
 	}
 	if err := os.WriteFile(allRulesPath(r.cfg.SnortWorkingDir), []byte(content), 0644); err != nil {
-		return fmt.Errorf("write all.rules: %w", err)
+		return 0, fmt.Errorf("write all.rules: %w", err)
 	}
-	return nil
+	return int64(len(lines)), nil
 }
 
 func (r *Runner) tailAlerts(ctx context.Context) error {
@@ -92,6 +109,32 @@ func (r *Runner) setRuleEnabled(ruleID int64, enabled bool) error {
 
 func (r *Runner) resetSQLStore() error {
 	return sqlstore.Reset(r.sqlConfig())
+}
+
+func (r *Runner) buildStartupStats(loadedRules int64) (wraptypes.StartupStats, error) {
+	cfg := r.sqlConfig()
+	counts, err := sqlstore.CountTables(cfg)
+	if err != nil {
+		return wraptypes.StartupStats{}, fmt.Errorf("count sql tables: %w", err)
+	}
+	tableCounts := make(map[string]wraptypes.DBTableCount, len(counts))
+	for table, count := range counts {
+		tableCounts[table] = wraptypes.DBTableCount{Total: count.Total, Run: count.Run}
+	}
+	return wraptypes.StartupStats{
+		RunID:           r.cfg.RunID,
+		Mode:            r.cfg.Mode,
+		SnortWorkingDir: r.cfg.SnortWorkingDir,
+		SnortConfigPath: r.cfg.SnortConfigPath,
+		SnortDBPath:     cfg.DBPath,
+		RawRulePath:     cfg.RawRulePath,
+		AllRulesPath:    allRulesPath(r.cfg.SnortWorkingDir),
+		LoadedRuleCount: loadedRules,
+		TableCounts:     tableCounts,
+		NeedAlert:       r.cfg.NeedAlert,
+		NeedProfiler:    r.cfg.NeedProfiler,
+		NeedOutput:      r.cfg.NeedOutput,
+	}, nil
 }
 
 func alertJSONPath(snortWorkingDir string) string {

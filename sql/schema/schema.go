@@ -1,11 +1,17 @@
 package schema
 
 import (
+	"fmt"
 	"os"
 
 	"snort-optimizer/sql/config"
 	"snort-optimizer/sql/db"
 )
+
+type TableCount struct {
+	Total int64 `json:"total"`
+	Run   int64 `json:"run"`
+}
 
 func Ensure(cfg config.Config) error {
 	script := `
@@ -153,4 +159,60 @@ func Reset(cfg config.Config) error {
 		}
 	}
 	return nil
+}
+
+func CountTables(cfg config.Config) (map[string]TableCount, error) {
+	if err := Ensure(cfg); err != nil {
+		return nil, err
+	}
+	tables := []string{
+		"alerts",
+		"rules",
+		"profiler_metrics",
+		"rule_profiler_metrics",
+		"module_profile_metrics",
+		"system_profiles",
+	}
+	out := make(map[string]TableCount, len(tables))
+	for _, table := range tables {
+		total, err := countTable(cfg.DBPath, table, "")
+		if err != nil {
+			return nil, err
+		}
+		run, err := countTable(cfg.DBPath, table, fmt.Sprintf("run_id = %d", cfg.RunID))
+		if err != nil {
+			return nil, err
+		}
+		out[table] = TableCount{Total: total, Run: run}
+	}
+	return out, nil
+}
+
+func countTable(dbPath, table, where string) (int64, error) {
+	query := fmt.Sprintf("SELECT count(*) AS count FROM %s", table)
+	if where != "" {
+		query += " WHERE " + where
+	}
+	query += ";"
+	rows, err := db.QueryJSON(dbPath, query)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	return asInt(rows[0]["count"]), nil
+}
+
+func asInt(v any) int64 {
+	switch n := v.(type) {
+	case float64:
+		return int64(n)
+	case int64:
+		return n
+	case int:
+		return int64(n)
+	default:
+		return 0
+	}
 }

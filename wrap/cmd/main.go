@@ -65,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 	status := r.Status()
-	fmt.Fprintf(os.Stderr, "snort started pid=%d pgid=%d\n", status.RunInfo.PID, status.RunInfo.PGID)
+	printStartupStats(os.Stderr, status, r.StartupStats())
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -84,6 +84,29 @@ func main() {
 				return
 			}
 		}
+	}
+}
+
+func printStartupStats(out *os.File, status wrap.Status, stats wrap.StartupStats) {
+	fmt.Fprintf(out, "snort started pid=%d pgid=%d\n", status.RunInfo.PID, status.RunInfo.PGID)
+	fmt.Fprintf(out, "run id: %d\n", stats.RunID)
+	fmt.Fprintf(out, "mode: %s\n", stats.Mode)
+	if status.Config.PcapFile != "" {
+		fmt.Fprintf(out, "pcap: %s\n", status.Config.PcapFile)
+	}
+	if status.Config.Interface != "" {
+		fmt.Fprintf(out, "iface: %s\n", status.Config.Interface)
+	}
+	fmt.Fprintf(out, "swd: %s\n", stats.SnortWorkingDir)
+	fmt.Fprintf(out, "config: %s\n", stats.SnortConfigPath)
+	fmt.Fprintf(out, "database: %s\n", stats.SnortDBPath)
+	fmt.Fprintf(out, "raw rules: %s\n", stats.RawRulePath)
+	fmt.Fprintf(out, "all.rules: %s (%d enabled rules loaded)\n", stats.AllRulesPath, stats.LoadedRuleCount)
+	fmt.Fprintf(out, "features: need-output=%t need-alert=%t need-profiler=%t\n", stats.NeedOutput, stats.NeedAlert, stats.NeedProfiler)
+	fmt.Fprintln(out, "database counts: table total/run")
+	for _, table := range []string{"rules", "alerts", "profiler_metrics", "rule_profiler_metrics", "module_profile_metrics", "system_profiles"} {
+		count := stats.TableCounts[table]
+		fmt.Fprintf(out, "  %s %d/%d\n", table, count.Total, count.Run)
 	}
 }
 

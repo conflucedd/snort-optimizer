@@ -8,6 +8,8 @@ import (
 type Config = wraptypes.Config
 type RunInfo = wraptypes.RunInfo
 type Status = wraptypes.Status
+type StartupStats = wraptypes.StartupStats
+type DBTableCount = wraptypes.DBTableCount
 type Runner = runner.Runner
 
 const (

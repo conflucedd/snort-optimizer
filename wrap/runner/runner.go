@@ -29,6 +29,7 @@ type Runner struct {
 	alertDone  chan struct{}
 	systemStop context.CancelFunc
 	systemDone chan systemProfileResult
+	stats      wraptypes.StartupStats
 }
 
 func New(cfg wraptypes.Config) (*Runner, error) {
@@ -51,7 +52,12 @@ func (r *Runner) Start() error {
 	if err := r.ensureRuleStore(); err != nil {
 		return err
 	}
-	if err := r.generateAllRules(); err != nil {
+	loadedRules, err := r.generateAllRules()
+	if err != nil {
+		return err
+	}
+	stats, err := r.buildStartupStats(loadedRules)
+	if err != nil {
 		return err
 	}
 	snortBin, daqDir, err := resolveSnortEnv()
@@ -99,6 +105,7 @@ func (r *Runner) Start() error {
 		Running:   true,
 		StartTime: time.Now(),
 	}
+	r.stats = stats
 	if r.cfg.NeedAlert {
 		ctx, cancel := context.WithCancel(context.Background())
 		r.alertStop = cancel
@@ -179,6 +186,12 @@ func (r *Runner) Config() wraptypes.Config {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.cfg
+}
+
+func (r *Runner) StartupStats() wraptypes.StartupStats {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.stats
 }
 
 func (r *Runner) snortArgs(daqDir string) []string {
