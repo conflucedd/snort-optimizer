@@ -1,4 +1,4 @@
-在analyser里实现规则分析裁剪性能优化。
+在analyser里实现规则分析裁剪性能优化。同时支持cmd和package调用
 
 Analyser的input：
     pcap1+db（已知内容的实验流量）用于测试误报率和漏报率，样例在data/Tuesday.pcap, data/Tuesday.db
