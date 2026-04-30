@@ -101,25 +101,17 @@ func (inst snortInstance) run(ctx context.Context, cfg Config, runID int64) (ins
 	if err := r.Start(); err != nil {
 		return instanceRun{}, fmt.Errorf("%s start: %w", inst.Name, err)
 	}
-	ticker := time.NewTicker(cfg.PollInterval)
-	defer ticker.Stop()
-	for {
-		if !r.Status().RunInfo.Running {
-			stats := r.StartupStats()
-			return instanceRun{
-				Name:            inst.Name,
-				RunID:           runID,
-				Duration:        time.Since(start),
-				LoadedRuleCount: stats.LoadedRuleCount,
-			}, nil
-		}
-		select {
-		case <-ctx.Done():
-			_ = r.Stop()
-			return instanceRun{}, ctx.Err()
-		case <-ticker.C:
-		}
+	if err := r.Wait(ctx); err != nil {
+		_ = r.Stop()
+		return instanceRun{}, fmt.Errorf("%s wait: %w", inst.Name, err)
 	}
+	stats := r.StartupStats()
+	return instanceRun{
+		Name:            inst.Name,
+		RunID:           runID,
+		Duration:        time.Since(start),
+		LoadedRuleCount: stats.LoadedRuleCount,
+	}, nil
 }
 
 func ensureInstanceDirs(set instanceSet) error {

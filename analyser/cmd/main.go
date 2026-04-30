@@ -49,7 +49,7 @@ func main() {
 	fs.DurationVar(&matchGrace, "match-grace", analyser.DefaultMatchGrace, "Alert-to-flow time matching grace window")
 	fs.Float64Var(&cfg.MaxMissRateIncrease, "max-miss-increase", 0.01, "Maximum absolute miss-rate increase allowed for ITER commit")
 	fs.Float64Var(&cfg.MaxFPRateIncrease, "max-fp-increase", 0.02, "Maximum absolute false-positive-rate increase allowed for ITER commit")
-	fs.BoolVar(&cfg.PreserveWorkDBs, "preserve-work-dbs", false, "Keep existing generated analyser instance databases")
+	fs.BoolVar(&cfg.PreserveWorkDBs, "preserve-work-dbs", false, "Skip startup deletion of the analyser working directory")
 	if err := rejectSingleDashArgs(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		fs.Usage()

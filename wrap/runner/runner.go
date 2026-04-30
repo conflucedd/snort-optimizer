@@ -162,6 +162,24 @@ func (r *Runner) Stop() error {
 	return nil
 }
 
+func (r *Runner) Wait(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	r.mu.Lock()
+	waitDone := r.waitDone
+	r.mu.Unlock()
+	if waitDone == nil {
+		return nil
+	}
+	select {
+	case <-waitDone:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (r *Runner) Restart() error {
 	if err := r.Stop(); err != nil {
 		return err
@@ -260,7 +278,6 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 		r.systemStop = nil
 		r.systemDone = nil
 		r.cmd = nil
-		r.waitDone = nil
 		r.runInfo.Running = false
 		r.mu.Unlock()
 		if alertStop != nil {
@@ -293,6 +310,11 @@ func (r *Runner) waitForExit(cmd *exec.Cmd, done chan struct{}) {
 			}
 		}
 		close(done)
+		r.mu.Lock()
+		if r.waitDone == done {
+			r.waitDone = nil
+		}
+		r.mu.Unlock()
 		return
 	}
 	r.mu.Unlock()

@@ -2,6 +2,7 @@ package analyser
 
 import (
 	"database/sql"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -41,5 +42,34 @@ VALUES
 	}
 	if rules[0].SID != 1001 {
 		t.Fatalf("SID = %d, want 1001", rules[0].SID)
+	}
+}
+
+func TestResetAnalyserWorkingDirRemovesExistingContents(t *testing.T) {
+	parent := t.TempDir()
+	workDir := filepath.Join(parent, "analyser-work")
+	if err := os.MkdirAll(filepath.Join(workDir, "exp"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	stalePath := filepath.Join(workDir, "exp", "alert_json.txt")
+	if err := os.WriteFile(stalePath, []byte("{}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := resetAnalyserWorkingDir(workDir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(workDir); !os.IsNotExist(err) {
+		t.Fatalf("work dir still exists after reset: %v", err)
+	}
+}
+
+func TestValidateRemoveAllTargetRejectsCurrentDirectory(t *testing.T) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateRemoveAllTarget(cwd); err == nil {
+		t.Fatal("validateRemoveAllTarget accepted current working directory")
 	}
 }

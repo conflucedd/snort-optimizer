@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -19,26 +20,51 @@ import (
 const maxAnalyserRules = 1_000_000
 
 func prepareRuleDatabases(cfg Config, set instanceSet) error {
+	if !cfg.PreserveWorkDBs {
+		if err := resetAnalyserWorkingDir(cfg.AnalyserWorkingDir); err != nil {
+			return err
+		}
+	}
 	if err := ensureInstanceDirs(set); err != nil {
 		return err
 	}
 	if err := ensureEmptyPCAP(cfg.EmptyPcap); err != nil {
 		return err
 	}
-	if !cfg.PreserveWorkDBs {
-		for _, inst := range set.ordered() {
-			if err := removeSQLite(inst.DBPath); err != nil {
-				return err
-			}
-		}
-		if err := removeSQLite(analyserDBPath(cfg)); err != nil {
-			return err
-		}
-	}
 	for _, inst := range set.ordered() {
 		if err := initRuleDB(cfg, inst.DBPath); err != nil {
 			return fmt.Errorf("%s init rules: %w", inst.Name, err)
 		}
+	}
+	return nil
+}
+
+func resetAnalyserWorkingDir(path string) error {
+	clean := filepath.Clean(path)
+	if err := validateRemoveAllTarget(clean); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(clean); err != nil {
+		return fmt.Errorf("remove analyser working dir %s: %w", clean, err)
+	}
+	return nil
+}
+
+func validateRemoveAllTarget(path string) error {
+	if path == "" || path == "." || path == string(os.PathSeparator) {
+		return fmt.Errorf("refuse to remove unsafe analyser working dir %q", path)
+	}
+	cwd, err := os.Getwd()
+	if err == nil && filepath.Clean(cwd) == path {
+		return fmt.Errorf("refuse to remove current working directory %s", path)
+	}
+	home, err := os.UserHomeDir()
+	if err == nil && filepath.Clean(home) == path {
+		return fmt.Errorf("refuse to remove home directory %s", path)
+	}
+	tmp := filepath.Clean(os.TempDir())
+	if tmp == path {
+		return fmt.Errorf("refuse to remove temp root %s", path)
 	}
 	return nil
 }
@@ -300,15 +326,6 @@ func countEnabledRules(dbPath string, runID int64) (int64, error) {
 	var count int64
 	err = conn.QueryRow("SELECT count(*) FROM rules WHERE run_id = ? AND enabled = 1;", runID).Scan(&count)
 	return count, err
-}
-
-func removeSQLite(path string) error {
-	for _, p := range []string{path, path + "-wal", path + "-shm"} {
-		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-	}
-	return nil
 }
 
 func ruleKey(gid, sid int64) string {
