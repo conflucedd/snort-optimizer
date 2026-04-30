@@ -21,3 +21,4 @@ wrap/snort_output.txt
 *.csv
 *.states
 alert_json.txt
+*.sqlite
