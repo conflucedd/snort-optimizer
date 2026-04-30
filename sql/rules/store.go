@@ -113,7 +113,7 @@ func InsertBatch(cfg config.Config, records []types.Rule) error {
 	if len(records) == 0 {
 		return nil
 	}
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureRules(cfg); err != nil {
 		return err
 	}
 	now := time.Now().UTC().Format(time.RFC3339Nano)
@@ -137,6 +137,9 @@ VALUES (%d, %d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s);
 }
 
 func List(cfg config.Config, q Query) ([]types.Rule, error) {
+	if err := schema.EnsureRules(cfg); err != nil {
+		return nil, err
+	}
 	where := []string{"1=1"}
 	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
 	if q.SID > 0 {
@@ -175,6 +178,9 @@ func List(cfg config.Config, q Query) ([]types.Rule, error) {
 }
 
 func SetEnabled(cfg config.Config, gid, sid int64, enabled bool) error {
+	if err := schema.EnsureRules(cfg); err != nil {
+		return err
+	}
 	value := 0
 	if enabled {
 		value = 1
@@ -183,7 +189,7 @@ func SetEnabled(cfg config.Config, gid, sid int64, enabled bool) error {
 }
 
 func Reset(cfg config.Config) error {
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureRules(cfg); err != nil {
 		return err
 	}
 	return db.RunScript(cfg.DBPath, []byte(`

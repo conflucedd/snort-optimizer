@@ -24,6 +24,22 @@ func Ensure(cfg Config) error {
 	return schema.Ensure(cfg)
 }
 
+func EnsureAlerts(cfg Config) error {
+	return schema.EnsureAlerts(cfg)
+}
+
+func EnsureProfiler(cfg Config) error {
+	return schema.EnsureProfiler(cfg)
+}
+
+func EnsureSystemProfiles(cfg Config) error {
+	return schema.EnsureSystemProfiles(cfg)
+}
+
+func EnsureRules(cfg Config) error {
+	return schema.EnsureRules(cfg)
+}
+
 func ImportAlerts(cfg Config, logger *log.Logger) (int, error) {
 	return alerts.ImportFile(cfg, fallbackLogger(logger))
 }

@@ -56,6 +56,8 @@ type SystemProfile struct {
 	RunID     int64   `json:"run_id"`
 	AvgCPU    float64 `json:"avg_cpu"`
 	AvgMemMB  float64 `json:"avg_mem_mb"`
+	FP        float64 `json:"fp"`
+	FN        float64 `json:"fn"`
 	Samples   int64   `json:"samples"`
 	CreatedAt string  `json:"created_at,omitempty"`
 }

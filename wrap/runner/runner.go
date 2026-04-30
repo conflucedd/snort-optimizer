@@ -52,6 +52,16 @@ func (r *Runner) Start() error {
 	if err := r.ensureRuleStore(); err != nil {
 		return err
 	}
+	if r.cfg.NeedAlert {
+		if err := r.ensureAlertStore(); err != nil {
+			return err
+		}
+	}
+	if r.cfg.NeedProfiler {
+		if err := r.ensureProfilerStore(); err != nil {
+			return err
+		}
+	}
 	loadedRules, err := r.generateAllRules()
 	if err != nil {
 		return err
@@ -63,11 +73,6 @@ func (r *Runner) Start() error {
 	snortBin, daqDir, err := resolveSnortEnv()
 	if err != nil {
 		return err
-	}
-	if r.cfg.NeedAlert {
-		if err := r.ensureSQLStore(); err != nil {
-			return err
-		}
 	}
 	var alertTailer *sqlstore.AlertTailer
 	if r.cfg.NeedAlert {
@@ -200,6 +205,9 @@ func (r *Runner) snortArgs(daqDir string) []string {
 	args = append(args, "--lua", "ips.rules = [[\ninclude "+allRulesPath(r.cfg.SnortWorkingDir)+"\n]]")
 	if r.cfg.NeedAlert {
 		args = append(args, "--lua", "alert_json = { file = true }")
+	}
+	if r.cfg.NeedProfiler {
+		args = append(args, "--lua", "profiler = {}")
 	}
 	for _, override := range r.cfg.LuaOverrides {
 		args = append(args, "--lua", override)

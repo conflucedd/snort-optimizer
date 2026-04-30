@@ -35,7 +35,25 @@ func (r *Runner) ensureSQLStore() error {
 	if err := os.MkdirAll(r.cfg.SnortWorkingDir, 0755); err != nil {
 		return fmt.Errorf("create snort working dir: %w", err)
 	}
-	return sqlstore.Ensure(r.sqlConfig())
+	return nil
+}
+
+func (r *Runner) ensureAlertStore() error {
+	if err := r.ensureSQLStore(); err != nil {
+		return err
+	}
+	return sqlstore.EnsureAlerts(r.sqlConfig())
+}
+
+func (r *Runner) ensureProfilerStore() error {
+	if err := r.ensureSQLStore(); err != nil {
+		return err
+	}
+	cfg := r.sqlConfig()
+	if err := sqlstore.EnsureProfiler(cfg); err != nil {
+		return err
+	}
+	return sqlstore.EnsureSystemProfiles(cfg)
 }
 
 func (r *Runner) ensureRuleStore() error {
@@ -53,6 +71,9 @@ func (r *Runner) ensureRuleStore() error {
 		if err := r.ensureSQLStore(); err != nil {
 			return err
 		}
+		if err := sqlstore.EnsureRules(cfg); err != nil {
+			return err
+		}
 		rules, err := sqlstore.ListRules(cfg, sqlstore.RuleQuery{RunID: r.cfg.RunID, Limit: 1})
 		if err != nil {
 			return fmt.Errorf("query rules for run-id %d: %w", r.cfg.RunID, err)
@@ -63,6 +84,9 @@ func (r *Runner) ensureRuleStore() error {
 		return nil
 	}
 	if err := r.ensureSQLStore(); err != nil {
+		return err
+	}
+	if err := sqlstore.EnsureRules(cfg); err != nil {
 		return err
 	}
 	if dbMissing {

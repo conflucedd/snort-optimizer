@@ -54,7 +54,7 @@ func InsertBatch(cfg config.Config, metrics []types.ProfilerMetric) error {
 	if len(metrics) == 0 {
 		return nil
 	}
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureProfilerMetrics(cfg); err != nil {
 		return err
 	}
 	now := time.Now().UTC().Format(time.RFC3339Nano)
@@ -77,6 +77,9 @@ VALUES (%d, %s, %s, %s, %g, %g, %s, %s, %s, %s);
 }
 
 func List(cfg config.Config, q Query) ([]types.ProfilerMetric, error) {
+	if err := schema.EnsureProfilerMetrics(cfg); err != nil {
+		return nil, err
+	}
 	where := []string{"1=1"}
 	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
 	if q.Section != "" {
@@ -108,7 +111,7 @@ func InsertRuleBatch(cfg config.Config, metrics []types.RuleProfilerMetric) erro
 	if len(metrics) == 0 {
 		return nil
 	}
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureRuleProfilerMetrics(cfg); err != nil {
 		return err
 	}
 	now := time.Now().UTC().Format(time.RFC3339Nano)
@@ -135,7 +138,7 @@ func InsertModuleBatch(cfg config.Config, metrics []types.ModuleProfileMetric) e
 	if len(metrics) == 0 {
 		return nil
 	}
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureModuleProfileMetrics(cfg); err != nil {
 		return err
 	}
 	now := time.Now().UTC().Format(time.RFC3339Nano)
@@ -158,16 +161,16 @@ VALUES (%d, %d, %s, %s, %d, %d, %g, %g, %g, %s, %s, %s);
 }
 
 func InsertSystemProfile(cfg config.Config, profile types.SystemProfile) error {
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureSystemProfiles(cfg); err != nil {
 		return err
 	}
 	if profile.CreatedAt == "" {
 		profile.CreatedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	}
 	runID := effectiveRunID(cfg, profile.RunID)
-	script := fmt.Sprintf(`INSERT INTO system_profiles (run_id, avg_cpu, avg_mem_mb, samples, created_at)
-VALUES (%d, %g, %g, %d, %s);`,
-		runID, profile.AvgCPU, profile.AvgMemMB, profile.Samples, db.Quote(profile.CreatedAt))
+	script := fmt.Sprintf(`INSERT INTO system_profiles (run_id, avg_cpu, avg_mem_mb, fp, fn, samples, created_at)
+VALUES (%d, %g, %g, %g, %g, %d, %s);`,
+		runID, profile.AvgCPU, profile.AvgMemMB, profile.FP, profile.FN, profile.Samples, db.Quote(profile.CreatedAt))
 	return db.RunScript(cfg.DBPath, []byte(script))
 }
 

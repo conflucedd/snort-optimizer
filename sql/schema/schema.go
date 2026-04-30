@@ -14,6 +14,26 @@ type TableCount struct {
 }
 
 func Ensure(cfg config.Config) error {
+	return EnsureAll(cfg)
+}
+
+func EnsureAll(cfg config.Config) error {
+	if err := EnsureAlerts(cfg); err != nil {
+		return err
+	}
+	if err := EnsureProfiler(cfg); err != nil {
+		return err
+	}
+	if err := EnsureSystemProfiles(cfg); err != nil {
+		return err
+	}
+	return EnsureRules(cfg)
+}
+
+func EnsureAlerts(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "alerts", []string{"run_id"}, nil); err != nil {
+		return err
+	}
 	script := `
 PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS alerts (
@@ -39,7 +59,29 @@ CREATE TABLE IF NOT EXISTS alerts (
 CREATE INDEX IF NOT EXISTS idx_alerts_sid ON alerts (sid);
 CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts (created_at);
 CREATE INDEX IF NOT EXISTS idx_alerts_source_file ON alerts (source_file);
+`
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte("CREATE INDEX IF NOT EXISTS idx_alerts_run_id ON alerts (run_id);"))
+}
 
+func EnsureProfiler(cfg config.Config) error {
+	if err := EnsureProfilerMetrics(cfg); err != nil {
+		return err
+	}
+	if err := EnsureRuleProfilerMetrics(cfg); err != nil {
+		return err
+	}
+	return EnsureModuleProfileMetrics(cfg)
+}
+
+func EnsureProfilerMetrics(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "profiler_metrics", []string{"run_id"}, nil); err != nil {
+		return err
+	}
+	script := `
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS profiler_metrics (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	run_id INTEGER NOT NULL DEFAULT 0,
@@ -55,7 +97,19 @@ CREATE TABLE IF NOT EXISTS profiler_metrics (
 );
 CREATE INDEX IF NOT EXISTS idx_profiler_section_module ON profiler_metrics (section, module);
 CREATE INDEX IF NOT EXISTS idx_profiler_created_at ON profiler_metrics (created_at);
+`
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte("CREATE INDEX IF NOT EXISTS idx_profiler_run_id ON profiler_metrics (run_id);"))
+}
 
+func EnsureRuleProfilerMetrics(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "rule_profiler_metrics", []string{"run_id"}, nil); err != nil {
+		return err
+	}
+	script := `
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS rule_profiler_metrics (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	run_id INTEGER NOT NULL DEFAULT 0,
@@ -77,7 +131,19 @@ CREATE TABLE IF NOT EXISTS rule_profiler_metrics (
 	created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_rule_profiler_rule ON rule_profiler_metrics (gid, sid, rev);
+`
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte("CREATE INDEX IF NOT EXISTS idx_rule_profiler_run_id ON rule_profiler_metrics (run_id);"))
+}
 
+func EnsureModuleProfileMetrics(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "module_profile_metrics", []string{"run_id"}, nil); err != nil {
+		return err
+	}
+	script := `
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS module_profile_metrics (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	run_id INTEGER NOT NULL DEFAULT 0,
@@ -94,15 +160,42 @@ CREATE TABLE IF NOT EXISTS module_profile_metrics (
 	created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_module_profile_module ON module_profile_metrics (module);
+`
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte("CREATE INDEX IF NOT EXISTS idx_module_profile_run_id ON module_profile_metrics (run_id);"))
+}
 
+func EnsureSystemProfiles(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "system_profiles", []string{"run_id", "fp", "fn"}, nil); err != nil {
+		return err
+	}
+	script := `
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS system_profiles (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	run_id INTEGER NOT NULL DEFAULT 0,
 	avg_cpu REAL NOT NULL,
 	avg_mem_mb REAL NOT NULL,
+	fp REAL NOT NULL DEFAULT 0,
+	fn REAL NOT NULL DEFAULT 0,
 	samples INTEGER NOT NULL,
 	created_at TEXT NOT NULL
 );
+`
+	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
+		return err
+	}
+	return db.RunScript(cfg.DBPath, []byte("CREATE INDEX IF NOT EXISTS idx_system_profiles_run_id ON system_profiles (run_id);"))
+}
+
+func EnsureRules(cfg config.Config) error {
+	if err := recreateIncompatibleTable(cfg.DBPath, "rules", []string{"run_id"}, []string{"id"}); err != nil {
+		return err
+	}
+	script := `
+PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS rules (
 	run_id INTEGER NOT NULL DEFAULT 0,
 	sid INTEGER NOT NULL,
@@ -123,100 +216,57 @@ CREATE TABLE IF NOT EXISTS rules (
 	created_at TEXT NOT NULL,
 	PRIMARY KEY (run_id, gid, sid)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
 CREATE INDEX IF NOT EXISTS idx_rules_sid ON rules (sid);
 CREATE INDEX IF NOT EXISTS idx_rules_enabled ON rules (enabled);
 `
 	if err := db.RunScript(cfg.DBPath, []byte(script)); err != nil {
 		return err
 	}
-	migrations := []string{
-		"ALTER TABLE alerts ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-		"ALTER TABLE rules ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-		"ALTER TABLE profiler_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-		"ALTER TABLE rule_profiler_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-		"ALTER TABLE module_profile_metrics ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-		"ALTER TABLE system_profiles ADD COLUMN run_id INTEGER NOT NULL DEFAULT 0;",
-	}
-	for _, migration := range migrations {
-		if err := db.RunScript(cfg.DBPath, []byte(migration)); err != nil && !db.IsDuplicateColumn(err) {
-			return err
-		}
-	}
-	if err := migrateRulesPrimaryKey(cfg.DBPath); err != nil {
-		return err
-	}
 	return db.RunScript(cfg.DBPath, []byte(`
-DROP INDEX IF EXISTS idx_rules_source_raw;
-CREATE INDEX IF NOT EXISTS idx_alerts_run_id ON alerts (run_id);
 CREATE INDEX IF NOT EXISTS idx_rules_run_id ON rules (run_id);
-CREATE INDEX IF NOT EXISTS idx_profiler_run_id ON profiler_metrics (run_id);
-CREATE INDEX IF NOT EXISTS idx_rule_profiler_run_id ON rule_profiler_metrics (run_id);
-CREATE INDEX IF NOT EXISTS idx_module_profile_run_id ON module_profile_metrics (run_id);
-CREATE INDEX IF NOT EXISTS idx_system_profiles_run_id ON system_profiles (run_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_run_source_raw ON rules (run_id, source_file, raw_text);
 `))
 }
 
-func migrateRulesPrimaryKey(dbPath string) error {
-	needsMigration, err := rulesPrimaryKeyNeedsMigration(dbPath)
-	if err != nil || !needsMigration {
+func recreateIncompatibleTable(dbPath, table string, requiredColumns, forbiddenColumns []string) error {
+	exists, err := tableExists(dbPath, table)
+	if err != nil || !exists {
 		return err
 	}
-	return db.RunScript(dbPath, []byte(`
-DROP INDEX IF EXISTS idx_rules_source_raw;
-DROP INDEX IF EXISTS idx_rules_run_source_raw;
-DROP INDEX IF EXISTS idx_rules_sid;
-DROP INDEX IF EXISTS idx_rules_enabled;
-DROP INDEX IF EXISTS idx_rules_run_id;
-CREATE TABLE rules_new (
-	run_id INTEGER NOT NULL DEFAULT 0,
-	sid INTEGER NOT NULL,
-	gid INTEGER NOT NULL DEFAULT 1,
-	rev INTEGER,
-	action TEXT,
-	proto TEXT,
-	src_net TEXT,
-	src_port TEXT,
-	direction TEXT,
-	dst_net TEXT,
-	dst_port TEXT,
-	msg TEXT,
-	classtype TEXT,
-	enabled INTEGER NOT NULL DEFAULT 1,
-	source_file TEXT,
-	raw_text TEXT NOT NULL,
-	created_at TEXT NOT NULL,
-	PRIMARY KEY (run_id, gid, sid)
-);
-INSERT OR IGNORE INTO rules_new (
-	run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at
-)
-SELECT run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at
-FROM rules
-ORDER BY run_id, gid, sid, rowid;
-DROP TABLE rules;
-ALTER TABLE rules_new RENAME TO rules;
-`))
+	columns, err := tableColumns(dbPath, table)
+	if err != nil {
+		return err
+	}
+	for _, column := range requiredColumns {
+		if !columns[column] {
+			return dropTable(dbPath, table)
+		}
+	}
+	for _, column := range forbiddenColumns {
+		if columns[column] {
+			return dropTable(dbPath, table)
+		}
+	}
+	return nil
 }
 
-func rulesPrimaryKeyNeedsMigration(dbPath string) (bool, error) {
-	rows, err := db.QueryJSON(dbPath, "PRAGMA table_info(rules);")
+func tableColumns(dbPath, table string) (map[string]bool, error) {
+	rows, err := db.QueryJSON(dbPath, "PRAGMA table_info("+table+");")
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	if len(rows) == 0 {
-		return false, nil
-	}
-	pk := map[string]int64{}
+	out := make(map[string]bool, len(rows))
 	for _, row := range rows {
 		name, _ := row["name"].(string)
-		if name == "id" {
-			return true, nil
+		if name != "" {
+			out[name] = true
 		}
-		pk[name] = asInt(row["pk"])
 	}
-	return pk["run_id"] != 1 || pk["gid"] != 2 || pk["sid"] != 3, nil
+	return out, nil
+}
+
+func dropTable(dbPath, table string) error {
+	return db.RunScript(dbPath, []byte("DROP TABLE IF EXISTS "+table+";"))
 }
 
 func Reset(cfg config.Config) error {
@@ -229,9 +279,6 @@ func Reset(cfg config.Config) error {
 }
 
 func CountTables(cfg config.Config) (map[string]TableCount, error) {
-	if err := Ensure(cfg); err != nil {
-		return nil, err
-	}
 	tables := []string{
 		"alerts",
 		"rules",
@@ -242,6 +289,14 @@ func CountTables(cfg config.Config) (map[string]TableCount, error) {
 	}
 	out := make(map[string]TableCount, len(tables))
 	for _, table := range tables {
+		exists, err := tableExists(cfg.DBPath, table)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			out[table] = TableCount{}
+			continue
+		}
 		total, err := countTable(cfg.DBPath, table, "")
 		if err != nil {
 			return nil, err
@@ -253,6 +308,19 @@ func CountTables(cfg config.Config) (map[string]TableCount, error) {
 		out[table] = TableCount{Total: total, Run: run}
 	}
 	return out, nil
+}
+
+func tableExists(dbPath, table string) (bool, error) {
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	rows, err := db.QueryJSON(dbPath, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = "+db.Quote(table)+";")
+	if err != nil {
+		return false, err
+	}
+	return len(rows) > 0, nil
 }
 
 func countTable(dbPath, table, where string) (int64, error) {

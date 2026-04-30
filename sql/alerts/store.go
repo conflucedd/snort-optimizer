@@ -39,7 +39,7 @@ func InsertBatch(cfg config.Config, batch []types.Alert) error {
 	if len(batch) == 0 {
 		return nil
 	}
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureAlerts(cfg); err != nil {
 		return err
 	}
 	var script bytes.Buffer
@@ -62,7 +62,7 @@ VALUES (%d, %s, %d, %s, %s, %d, %s, %s, %s, %d, %d, %d, %s, %s, %s, %s, %s);
 }
 
 func ImportFile(cfg config.Config, logger *log.Logger) (int, error) {
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureAlerts(cfg); err != nil {
 		return 0, err
 	}
 	file, err := os.Open(cfg.AlertPath)
@@ -86,7 +86,7 @@ func TailFile(ctx context.Context, cfg config.Config, logger *log.Logger) error 
 
 func NewTailer(cfg config.Config, logger *log.Logger, startExistingAtEnd bool) (*Tailer, error) {
 	cfg = cfg.WithDefaults()
-	if err := schema.Ensure(cfg); err != nil {
+	if err := schema.EnsureAlerts(cfg); err != nil {
 		return nil, err
 	}
 	if logger == nil {
@@ -155,6 +155,9 @@ func (t *Tailer) Close() error {
 }
 
 func List(cfg config.Config, q Query) ([]types.Alert, error) {
+	if err := schema.EnsureAlerts(cfg); err != nil {
+		return nil, err
+	}
 	where := []string{"1=1"}
 	where = append(where, fmt.Sprintf("run_id = %d", effectiveRunID(cfg, q.RunID)))
 	if q.GID > 0 {

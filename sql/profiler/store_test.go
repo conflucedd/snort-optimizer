@@ -30,7 +30,7 @@ func TestProfilerUsesConfigRunIDByDefault(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := InsertSystemProfile(cfg, types.SystemProfile{AvgCPU: 1, AvgMemMB: 2, Samples: 3}); err != nil {
+	if err := InsertSystemProfile(cfg, types.SystemProfile{AvgCPU: 1, AvgMemMB: 2, FP: 4, FN: 5, Samples: 3}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,5 +56,12 @@ func TestProfilerUsesConfigRunIDByDefault(t *testing.T) {
 		if asInt(rows[0]["run_id"]) != 7 {
 			t.Fatalf("expected %s run id 7, got %d", table, asInt(rows[0]["run_id"]))
 		}
+	}
+	rows, err := db.QueryJSON(cfg.DBPath, "SELECT fp, fn FROM system_profiles;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if asFloat(rows[0]["fp"]) != 4 || asFloat(rows[0]["fn"]) != 5 {
+		t.Fatalf("expected system profile fp/fn 4/5, got %#v", rows[0])
 	}
 }
