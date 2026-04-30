@@ -10,10 +10,13 @@ Analyser的input：
 Output：
     需要裁剪的规则和每条规则对应的原因
 
-说明：pcap1和pcap2对应两个实例。ExpSnort和RealSnort
+说明：pcap1和pcap2对应Run()时的两个实例。ExpSnort和RealSnort。Run()要依次串行启动这个实例。还要串行启动一个空pcap实例运行得到加载时间。每次启动都从run_id为0开始，生成run_id为1的规则，再以run_id为1运行，以此类推。
 
 逻辑：
     在analyser里
+    Gen_3_dbs_from_raw_snort.sqlite;（只获取raw db里的rules表即可，runid设为0）
+    以runid为0 Run() 得到最原始信息
+
     Register(SafeFunction1, SAFE);
     Register(SafeFunction2, SAFE);
     Register(IterFunction1, ITER);
@@ -25,7 +28,7 @@ Output：
             exec_all_iter_trim_function.
             Run() 执行snort并得到这个round的统计结果
 
-            res = Evaluate()
+            res = Evaluate() // 漏报率下降不多
             if (res very good) {
                 Commit();
             }
@@ -36,16 +39,28 @@ Output：
         }
     }
 
-    return all rules with reason（直接读数据库即可）。
+    return all rules with reason。
 
 策略函数的输入：
-    Analyser.db用于获取////####
-    Config 每个函数自定义的config
+    三个实例的sqlite.db
     round，当前round，用于获取当前的round信息。
 策略函数的输出：
-    裁剪的规则；函数自带的裁剪原因
+    裁剪的规则
+    函数自带的裁剪原因
 
 package安排：
+    cmd
+    ExpSnort(pcap1)
+    RealSnort(pcap2)
+    BaseSnort(空pcap)
+    scheduler 调度器
+    safe 安全裁剪函数
+    iter 迭代裁剪函数
+    analyser.go
 
 
-有什么不明白的请暂停问我。
+先生成最简单的两个规则，可以根据tmp/config/rules文件夹生成
+安全规则：裁剪所有source file和浏览器相关的规则
+iter规则：裁剪性能损耗大的规则
+
+有什么不明白的，或者有更好的建议，请暂停问我。
