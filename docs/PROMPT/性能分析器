@@ -1,0 +1,51 @@
+在analyser里实现规则分析裁剪性能优化。
+
+Analyser的input：
+    pcap1+db（已知内容的实验流量）用于测试误报率和漏报率，样例在data/Tuesday.pcap, data/Tuesday.db
+    pcap2（真实业务流量）用于测试性能，样例是data/Monday.db
+    AnayserWorkingDir：analyser的工作目录
+    snortConfig：snort配置文件位置
+    --lua覆写配置，用于精确还原生产环境的覆写
+    原始snort.sqlite：用于生成最初的规则配置
+Output：
+    需要裁剪的规则和每条规则对应的原因
+
+说明：pcap1和pcap2对应两个实例。ExpSnort和RealSnort
+
+逻辑：
+    在analyser里
+    Register(SafeFunction1, SAFE);
+    Register(SafeFunction2, SAFE);
+    Register(IterFunction1, ITER);
+
+    Scheduler() {
+        exec_all_safe_trim_function.
+
+        for i in 1..round_max {
+            exec_all_iter_trim_function.
+            Run() 执行snort并得到这个round的统计结果
+
+            res = Evaluate()
+            if (res very good) {
+                Commit();
+            }
+            else {
+                RollBack();
+                Max_trim = Max_trim / 2.
+            }
+        }
+    }
+
+    return all rules with reason（直接读数据库即可）。
+
+策略函数的输入：
+    Analyser.db用于获取////####
+    Config 每个函数自定义的config
+    round，当前round，用于获取当前的round信息。
+策略函数的输出：
+    裁剪的规则；函数自带的裁剪原因
+
+package安排：
+
+
+有什么不明白的请暂停问我。
