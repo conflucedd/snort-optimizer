@@ -1,4 +1,4 @@
-package analyser
+package scheduler
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"snort-optimizer/analyser/types"
 	"snort-optimizer/wrap"
 )
 
@@ -37,7 +38,7 @@ type instanceRun struct {
 	LoadedRuleCount int64
 }
 
-func newInstanceSet(cfg Config) instanceSet {
+func newInstanceSet(cfg types.Config) instanceSet {
 	expDir := filepath.Join(cfg.AnalyserWorkingDir, instanceExp)
 	realDir := filepath.Join(cfg.AnalyserWorkingDir, instanceReal)
 	baseDir := filepath.Join(cfg.AnalyserWorkingDir, instanceBase)
@@ -68,7 +69,11 @@ func (set instanceSet) ordered() []snortInstance {
 	return []snortInstance{set.Exp, set.Real, set.Base}
 }
 
-func (set instanceSet) runAll(ctx context.Context, cfg Config, runID int64) ([]instanceRun, error) {
+func (set instanceSet) dbPaths() []string {
+	return []string{set.Exp.DBPath, set.Real.DBPath, set.Base.DBPath}
+}
+
+func (set instanceSet) runAll(ctx context.Context, cfg types.Config, runID int64, afterExp func() error) ([]instanceRun, error) {
 	out := make([]instanceRun, 0, 3)
 	for _, inst := range set.ordered() {
 		run, err := inst.run(ctx, cfg, runID)
@@ -76,11 +81,16 @@ func (set instanceSet) runAll(ctx context.Context, cfg Config, runID int64) ([]i
 			return out, err
 		}
 		out = append(out, run)
+		if inst.Name == instanceExp && afterExp != nil {
+			if err := afterExp(); err != nil {
+				return out, err
+			}
+		}
 	}
 	return out, nil
 }
 
-func (inst snortInstance) run(ctx context.Context, cfg Config, runID int64) (instanceRun, error) {
+func (inst snortInstance) run(ctx context.Context, cfg types.Config, runID int64) (instanceRun, error) {
 	r, err := wrap.NewRunner(wrap.Config{
 		Mode:            wrap.ModePCAP,
 		SnortWorkingDir: inst.WorkDir,

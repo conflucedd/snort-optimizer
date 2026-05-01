@@ -1,14 +1,16 @@
-package analyser
+package iter
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"math"
+
+	"snort-optimizer/analyser/types"
 )
 
 type highCostRule struct {
-	TrimDecision
+	types.TrimDecision
 	TimeUS      int64
 	RuleTimePct float64
 	Checks      int64
@@ -16,7 +18,15 @@ type highCostRule struct {
 	Alerts      int64
 }
 
-func IterHighCostRules(ctx context.Context, input FunctionInput) ([]TrimDecision, error) {
+func HighCostRules() types.RegisteredFunction {
+	return types.RegisteredFunction{
+		Name: "iter_high_cost_rules",
+		Type: types.ITER,
+		Fn:   HighCostRulesFunc,
+	}
+}
+
+func HighCostRulesFunc(ctx context.Context, input types.FunctionInput) ([]types.TrimDecision, error) {
 	factor := input.Factor
 	if factor <= 0 {
 		return nil, nil
@@ -44,7 +54,7 @@ func IterHighCostRules(ctx context.Context, input FunctionInput) ([]TrimDecision
 	if limit > len(rows) {
 		limit = len(rows)
 	}
-	out := make([]TrimDecision, 0, limit)
+	out := make([]types.TrimDecision, 0, limit)
 	for i := 0; i < limit; i++ {
 		row := rows[i]
 		row.Reason = fmt.Sprintf("high real-traffic rule profiler cost: rank=%d time_us=%d pct=%.4f checks=%d matches=%d alerts=%d",

@@ -1,17 +1,15 @@
-package analyser
+package sql
 
 import (
-	"database/sql"
+	dbsql "database/sql"
 	"os"
 	"path/filepath"
 	"testing"
-
-	_ "modernc.org/sqlite"
 )
 
 func TestListRulesFromDBFiltersRunIDZero(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "raw.sqlite")
-	conn, err := sql.Open("sqlite", dbPath)
+	conn, err := dbsql.Open("sqlite", dbPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +31,7 @@ VALUES
 		t.Fatal(err)
 	}
 
-	rules, err := listRulesFromDB(dbPath, 0, false)
+	rules, err := ListRulesFromDB(dbPath, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +54,7 @@ func TestResetAnalyserWorkingDirRemovesExistingContents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := resetAnalyserWorkingDir(workDir); err != nil {
+	if err := ResetAnalyserWorkingDir(workDir); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(workDir); !os.IsNotExist(err) {

@@ -1,19 +1,21 @@
-package analyser
+package sql
 
 import (
-	"database/sql"
+	dbsql "database/sql"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"snort-optimizer/analyser/types"
 )
 
-func analyserDBPath(cfg Config) string {
-	return filepath.Join(cfg.AnalyserWorkingDir, defaultAnalyserDBName)
+func AnalyserDBPath(cfg types.Config) string {
+	return filepath.Join(cfg.AnalyserWorkingDir, types.DefaultAnalyserDBName)
 }
 
-func ensureAnalyserStore(path string) error {
-	conn, err := sql.Open("sqlite", path)
+func EnsureAnalyserStore(path string) error {
+	conn, err := dbsql.Open("sqlite", path)
 	if err != nil {
 		return err
 	}
@@ -64,14 +66,11 @@ CREATE TABLE IF NOT EXISTS trim_decisions (
 CREATE INDEX IF NOT EXISTS idx_trim_decisions_rule ON trim_decisions (gid, sid);
 CREATE INDEX IF NOT EXISTS idx_trim_decisions_run_id ON trim_decisions (run_id);
 `)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
-func insertRunResult(path string, result RunResult) error {
-	conn, err := sql.Open("sqlite", path)
+func InsertRunResult(path string, result types.RunResult) error {
+	conn, err := dbsql.Open("sqlite", path)
 	if err != nil {
 		return err
 	}
@@ -92,11 +91,11 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
 	return err
 }
 
-func insertTrimDecisions(path string, runID int64, decisions []TrimmedRule, committed bool) error {
+func InsertTrimDecisions(path string, runID int64, decisions []types.TrimmedRule, committed bool) error {
 	if len(decisions) == 0 {
 		return nil
 	}
-	conn, err := sql.Open("sqlite", path)
+	conn, err := dbsql.Open("sqlite", path)
 	if err != nil {
 		return err
 	}

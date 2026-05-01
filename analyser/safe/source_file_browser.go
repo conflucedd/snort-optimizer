@@ -1,12 +1,22 @@
-package analyser
+package safe
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"snort-optimizer/analyser/types"
 )
 
-func SafeSourceFileBrowser(ctx context.Context, input FunctionInput) ([]TrimDecision, error) {
+func SourceFileBrowser() types.RegisteredFunction {
+	return types.RegisteredFunction{
+		Name: "safe_source_file_browser",
+		Type: types.SAFE,
+		Fn:   SourceFileBrowserFunc,
+	}
+}
+
+func SourceFileBrowserFunc(ctx context.Context, input types.FunctionInput) ([]types.TrimDecision, error) {
 	conn, err := sql.Open("sqlite", input.ExpDBPath)
 	if err != nil {
 		return nil, err
@@ -26,9 +36,9 @@ ORDER BY gid, sid;`, input.SourceRunID)
 		return nil, err
 	}
 	defer rows.Close()
-	var out []TrimDecision
+	var out []types.TrimDecision
 	for rows.Next() {
-		var d TrimDecision
+		var d types.TrimDecision
 		if err := rows.Scan(&d.GID, &d.SID, &d.Rev, &d.SourceFile, &d.Msg); err != nil {
 			return nil, err
 		}

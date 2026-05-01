@@ -1,4 +1,4 @@
-package analyser
+package types
 
 import (
 	"context"
@@ -8,11 +8,10 @@ import (
 const (
 	DefaultMaxRound       = 8
 	DefaultInitialFactor  = 0.8
-	DefaultMatchGrace     = time.Minute
-	defaultPollInterval   = 500 * time.Millisecond
-	defaultMissIncrease   = 0.01
-	defaultFPIncrease     = 0.02
-	defaultAnalyserDBName = "analyser.db"
+	DefaultPollInterval   = 500 * time.Millisecond
+	DefaultMissIncrease   = 0.01
+	DefaultFPIncrease     = 0.02
+	DefaultAnalyserDBName = "analyser.db"
 )
 
 type FunctionType string
@@ -34,7 +33,6 @@ type Config struct {
 	EmptyPcap           string
 	MaxRound            int
 	InitialFactor       float64
-	MatchGraceWindow    time.Duration
 	MaxMissRateIncrease float64
 	MaxFPRateIncrease   float64
 	PreserveWorkDBs     bool
