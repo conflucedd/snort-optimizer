@@ -22,3 +22,5 @@ wrap/snort_output.txt
 *.states
 alert_json.txt
 *.sqlite
+analyser/cmd/cmd
+wrap/cmd/cmd
