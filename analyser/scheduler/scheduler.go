@@ -37,8 +37,6 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 		TrimmedRules:   []types.TrimmedRule{},
 		Runs:           []types.RunResult{},
 	}
-	factor := s.cfg.InitialFactor
-
 	baseRuns, err := set.runAll(ctx, s.cfg, 0, func() error {
 		return anasql.RefreshRuleFP(set.Exp.DBPath, 0, flows)
 	})
@@ -55,7 +53,7 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 	baseResult := types.RunResult{
 		RunID:      0,
 		Committed:  true,
-		Factor:     factor,
+		Factor:     s.cfg.InitialFactor,
 		Reason:     "baseline run",
 		Evaluation: baseEval,
 	}
@@ -114,66 +112,70 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 		nextRunID++
 	}
 
-	for round := 1; round <= s.cfg.MaxRound; round++ {
-		iterDecisions, err := s.execute(ctx, types.ITER, types.FunctionInput{
-			ExpDBPath:   set.Exp.DBPath,
-			RealDBPath:  set.Real.DBPath,
-			BaseDBPath:  set.Base.DBPath,
-			Round:       round,
-			SourceRunID: acceptedRunID,
-			Factor:      factor,
-		})
-		if err != nil {
-			return nil, err
-		}
-		iterTrimmed, err := anasql.AggregateAndEnrich(set.Exp.DBPath, acceptedRunID, types.ITER, iterDecisions)
-		if err != nil {
-			return nil, err
-		}
-		if len(iterTrimmed) == 0 {
-			break
-		}
-		setTrimRunID(iterTrimmed, nextRunID)
-		if err := anasql.CloneRulesForRun(set.dbPaths(), acceptedRunID, nextRunID, iterTrimmed); err != nil {
-			return nil, err
-		}
-		runs, err := set.runAll(ctx, s.cfg, nextRunID, func() error {
-			return anasql.RefreshRuleFP(set.Exp.DBPath, nextRunID, flows)
-		})
-		if err != nil {
-			return nil, err
-		}
-		eval, err := s.evaluateRun(set, nextRunID, runs, flows)
-		if err != nil {
-			return nil, err
-		}
-		committed, reason := s.evaluateCandidate(acceptedEval, eval)
-		runResult := types.RunResult{
-			RunID:      nextRunID,
-			Committed:  committed,
-			RolledBack: !committed,
-			Factor:     factor,
-			Reason:     reason,
-			Evaluation: eval,
-		}
-		if err := anasql.InsertTrimDecisions(storePath, nextRunID, iterTrimmed, committed); err != nil {
-			return nil, err
-		}
-		if err := anasql.InsertRunResult(storePath, runResult); err != nil {
-			return nil, err
-		}
-		result.Runs = append(result.Runs, runResult)
-		if committed {
-			result.TrimmedRules = append(result.TrimmedRules, iterTrimmed...)
-			acceptedRunID = nextRunID
-			acceptedEval = eval
-		} else {
-			factor = factor / 2
-			if factor <= 0.001 {
+	for _, fn := range s.functionsByType(types.ITER) {
+		factor := s.cfg.InitialFactor
+		for round := 1; round <= s.cfg.MaxRound; round++ {
+			iterDecisions, err := s.executeFunction(ctx, fn, types.FunctionInput{
+				ExpDBPath:   set.Exp.DBPath,
+				RealDBPath:  set.Real.DBPath,
+				BaseDBPath:  set.Base.DBPath,
+				Round:       round,
+				SourceRunID: acceptedRunID,
+				Factor:      factor,
+			})
+			if err != nil {
+				return nil, err
+			}
+			iterTrimmed, err := anasql.AggregateAndEnrich(set.Exp.DBPath, acceptedRunID, types.ITER, iterDecisions)
+			if err != nil {
+				return nil, err
+			}
+			if len(iterTrimmed) == 0 {
 				break
 			}
+			setTrimRunID(iterTrimmed, nextRunID)
+			if err := anasql.CloneRulesForRun(set.dbPaths(), acceptedRunID, nextRunID, iterTrimmed); err != nil {
+				return nil, err
+			}
+			runs, err := set.runAll(ctx, s.cfg, nextRunID, func() error {
+				return anasql.RefreshRuleFP(set.Exp.DBPath, nextRunID, flows)
+			})
+			if err != nil {
+				return nil, err
+			}
+			eval, err := s.evaluateRun(set, nextRunID, runs, flows)
+			if err != nil {
+				return nil, err
+			}
+			committed, reason := s.evaluateCandidate(acceptedEval, eval)
+			reason = fn.Name + ": " + reason
+			runResult := types.RunResult{
+				RunID:      nextRunID,
+				Committed:  committed,
+				RolledBack: !committed,
+				Factor:     factor,
+				Reason:     reason,
+				Evaluation: eval,
+			}
+			if err := anasql.InsertTrimDecisions(storePath, nextRunID, iterTrimmed, committed); err != nil {
+				return nil, err
+			}
+			if err := anasql.InsertRunResult(storePath, runResult); err != nil {
+				return nil, err
+			}
+			result.Runs = append(result.Runs, runResult)
+			if committed {
+				result.TrimmedRules = append(result.TrimmedRules, iterTrimmed...)
+				acceptedRunID = nextRunID
+				acceptedEval = eval
+			} else {
+				factor = factor / 2
+				if factor <= 0.001 {
+					break
+				}
+			}
+			nextRunID++
 		}
-		nextRunID++
 	}
 
 	result.FinalRunID = acceptedRunID

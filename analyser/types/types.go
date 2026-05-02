@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	DefaultMaxRound       = 8
+	DefaultMaxRound       = 4
 	DefaultInitialFactor  = 0.8
 	DefaultPollInterval   = 500 * time.Millisecond
 	DefaultMissIncrease   = 0.01

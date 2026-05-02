@@ -85,51 +85,24 @@ type TrimDecision struct {
 
 如果多个策略返回同一条规则，调度器会合并理由、函数名和指标。
 
+## 注册和调度
+
+`analyser.New` 不注册默认策略。调用方需要显式调用 `Register` / `RegisterAll`，命令行入口会根据 `--strategy` 和 `--disable-strategy` 注册内置策略。
+
+SAFE 策略会在 baseline 后统一执行并直接提交。ITER 策略按注册顺序逐个执行：每个 ITER 策略最多运行 `MaxRound` 轮，完成后才进入下一个 ITER 策略。每轮候选结果和上一轮已接受结果比较，超过漏报率或误报率阈值时回滚该轮。
+
 ## 当前策略
 
-### safe.SourceFileBrowser
-
-文件：
-
-```text
-analyser/safe/source_file_browser.go
-```
-
-注册函数：
-
-```go
-func SourceFileBrowser() types.RegisteredFunction
-```
-
-策略函数：
-
-```go
-func SourceFileBrowserFunc(ctx context.Context, input types.FunctionInput) ([]types.TrimDecision, error)
-```
-
-逻辑：从 `ExpDBPath` 的 `rules` 表中读取 `SourceRunID` 下启用的规则，裁剪 `source_file` 中包含 browser 或 Snort file/browser 规则类别的规则。
-
-### iter.HighCostRules
-
-文件：
-
-```text
-analyser/iter/high_cost_rules.go
-```
-
-注册函数：
-
-```go
-func HighCostRules() types.RegisteredFunction
-```
-
-策略函数：
-
-```go
-func HighCostRulesFunc(ctx context.Context, input types.FunctionInput) ([]types.TrimDecision, error)
-```
-
-逻辑：优先读取 `RealDBPath` 中 `SourceRunID` 的 `rule_profiler_metrics`，按 `time_us` 和 `rule_time_pct` 从高到低选择高成本规则。若真实业务库中没有可用记录，则回退到 `ExpDBPath`。候选数量为 `ceil(规则数 * 0.20 * Factor)`，至少 1 条。
+| 名称 | 文件 | 类型 | 逻辑 |
+| --- | --- | --- | --- |
+| `safe_source_file_browser` | `analyser/safe/source_file_browser.go` | SAFE | 裁剪 browser 和 file/browser 类规则。 |
+| `safe_source_file_protocols` | `analyser/safe/source_file_protocols.go` | SAFE | 按服务器场景裁剪 legacy、网关或工业控制类不常用协议规则。 |
+| `safe_inactive_systemd_services` | `analyser/safe/inactive_systemd_services.go` | SAFE | 读取 systemd active service/socket，裁剪未启用常见服务对应的规则。systemd 不可用时返回空结果。 |
+| `safe_orphan_flowbits` | `analyser/safe/orphan_flowbits.go` | SAFE | 裁剪依赖 `flowbits:isset`、但当前启用规则中没有 `set`/`toggle` 提供者的规则。 |
+| `iter_protocol_alert_overlap` | `analyser/iter/protocol_alert_overlap.go` | ITER | 对 protocol 类 source file，若告警覆盖集中在少量规则上，逐步裁剪低覆盖规则。 |
+| `iter_high_fp_low_utilization` | `analyser/iter/high_fp_low_utilization.go` | ITER | 基于 `rule_FP` 裁剪高误报率、低恶意流利用率规则。 |
+| `iter_low_yield_hot_rules` | `analyser/iter/low_yield_hot_rules.go` | ITER | 基于 profiler checks 和 `rule_FP` 裁剪被频繁检查但恶意检出低的规则。 |
+| `iter_high_cost_rules` | `analyser/iter/high_cost_rules.go` | ITER | 按 `rule_profiler_metrics.time_us` 和 `rule_time_pct` 裁剪高性能成本规则。 |
 
 ## 新增策略约定
 
@@ -171,10 +144,9 @@ func MyStrategyFunc(ctx context.Context, input types.FunctionInput) ([]types.Tri
 }
 ```
 
-注册位置：
+注册位置示例：
 
 ```go
-// analyser/analyser.go
 a.Register(iter.MyStrategy())
 ```
 

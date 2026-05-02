@@ -23,37 +23,36 @@ go run ./analyser/cmd --pcap1 data/Tuesday.pcap --db1 data/Tuesday.db --pcap2 da
 - `--raw-snort-sqlite`：初始 Snort 规则库，读取 `run_id=0` 的规则。
 - `--raw-rule-path`：无初始规则库时的规则文件或目录。
 - `--workdir`：analyser 工作目录，默认 `analyser-work`。
-- `--max-round`：ITER 最大迭代轮数。
+- `--max-round`：每个 ITER 策略的最大迭代轮数，默认 `4`。
 - `--factor`：ITER 初始裁剪比例因子。
 - `--max-miss-increase`：允许的漏报率最大增量。
 - `--max-fp-increase`：允许的误报率最大增量。
 - `--preserve-work-dbs`：保留已有工作目录，不在启动时删除。
+- `--strategy`：启用内置策略名，可重复或用逗号分隔；默认启用全部内置策略，`--strategy none` 只跑 baseline。
+- `--disable-strategy`：禁用内置策略名，可重复或用逗号分隔。
+- `--list-strategies`：列出内置策略名后退出。
 - `--lua`：额外 Snort `--lua` 覆盖项，可重复。
 
 所有参数使用双横线形式，例如 `--pcap1`。单横线参数会被拒绝。
 
 ## Go 接口
 
-主要入口在 `snort-optimizer/analyser`：
+主要入口在 `snort-optimizer/analyser`。`New` 只创建分析器，不再注册默认策略；调用方需要显式注册策略：
 
 ```go
-result, err := analyser.Run(ctx, types.Config{
+a, err := analyser.New(types.Config{
     Pcap1:          "data/Tuesday.pcap",
     DB1:            "data/Tuesday.db",
     Pcap2:          "data/Monday.pcap",
     SnortConfig:    "config/snort.lua",
     RawSnortSQLite: "config/snort.sqlite",
 })
-```
-
-需要自定义策略时使用 `Analyzer`：
-
-```go
-a, err := analyser.New(cfg)
-a.ClearFunctions()
-a.Register(myStrategy)
+a.Register(safe.SourceFileBrowser())
+a.Register(iter.HighCostRules())
 result, err := a.Run(ctx)
 ```
+
+`analyser.Run(ctx, cfg)` 保留为低层快捷入口，但不会自动注册任何策略。
 
 公共类型在 `snort-optimizer/analyser/types` 中，主要包括：
 
@@ -108,6 +107,10 @@ result, err := a.Run(ctx)
 - `unmatched_alerts`：未匹配到流的告警数量。
 - `fp_rate = benign_alerted_flows / alerted_flows`。
 - `utilization = malicious_alerted_flows / alerted_flows`。
+
+## 调度逻辑
+
+调度器先运行 baseline，再执行全部 SAFE 策略并直接提交 SAFE 裁剪结果。随后按注册顺序逐个执行 ITER 策略：先对第一个 ITER 策略最多运行 `--max-round` 轮，再对第二个 ITER 策略最多运行 `--max-round` 轮，以此类推。每个候选轮次都和上一轮已接受结果比较，若漏报率或误报率增量超过阈值则回滚该轮，并降低该策略后续轮次的 `factor`。
 
 ## 包结构
 

@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"snort-optimizer/analyser/iter"
-	"snort-optimizer/analyser/safe"
 	"snort-optimizer/analyser/scheduler"
 	"snort-optimizer/analyser/types"
 )
@@ -21,8 +19,6 @@ func New(cfg types.Config) (*Analyzer, error) {
 		return nil, err
 	}
 	a := &Analyzer{cfg: normalized}
-	a.Register(safe.SourceFileBrowser())
-	a.Register(iter.HighCostRules())
 	return a, nil
 }
 
@@ -56,6 +52,12 @@ func (a *Analyzer) Register(fn types.RegisteredFunction) {
 		return
 	}
 	a.functions = append(a.functions, fn)
+}
+
+func (a *Analyzer) RegisterAll(functions ...types.RegisteredFunction) {
+	for _, fn := range functions {
+		a.Register(fn)
+	}
 }
 
 func (a *Analyzer) Run(ctx context.Context) (*types.Result, error) {

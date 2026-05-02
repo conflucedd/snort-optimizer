@@ -63,6 +63,28 @@ func (s Scheduler) execute(ctx context.Context, typ types.FunctionType, input ty
 	return out, nil
 }
 
+func (s Scheduler) executeFunction(ctx context.Context, fn types.RegisteredFunction, input types.FunctionInput) ([]types.TrimDecision, error) {
+	decisions, err := fn.Fn(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", fn.Name, err)
+	}
+	for i := range decisions {
+		decisions[i].Function = fn.Name
+		decisions[i].Type = fn.Type
+	}
+	return decisions, nil
+}
+
+func (s Scheduler) functionsByType(typ types.FunctionType) []types.RegisteredFunction {
+	var out []types.RegisteredFunction
+	for _, fn := range s.functions {
+		if fn.Type == typ {
+			out = append(out, fn)
+		}
+	}
+	return out
+}
+
 func (s Scheduler) evaluateCandidate(accepted, candidate types.Evaluation) (bool, string) {
 	missDelta := candidate.MissRate - accepted.MissRate
 	fpDelta := candidate.FalsePositiveRate - accepted.FalsePositiveRate
