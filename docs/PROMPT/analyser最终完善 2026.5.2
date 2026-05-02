@@ -1,6 +1,6 @@
 对analyser package做最终的完善。原有内容可见docs/analyser
 1. 增加策略
-    Safe：
+    Safe： 
         （1）不常用协议（以tmp/config/rules作为示例的裁剪目标，因为这是面向服务器的，某些面向网关的协议可以直接禁用）比如已经实现的source_file_browser.go
         （2）未启用的服务对应的规则（可以通过systemd status读取，只实现常用的即可）
         （3）孤立flowbits依赖，比如没有规则提供了这个规则所需的flowbit
