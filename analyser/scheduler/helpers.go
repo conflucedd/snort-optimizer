@@ -44,6 +44,16 @@ func (s Scheduler) evaluateRun(set instanceSet, runID int64, runs []instanceRun,
 	return anasql.EvaluateRun(set.Exp.DBPath, set.Real.DBPath, runID, flows, stats)
 }
 
+func (s Scheduler) refreshExpDerivedStats(set instanceSet, runID int64, flows anasql.FlowSet) error {
+	if err := anasql.RefreshRuleFP(set.Exp.DBPath, runID, flows); err != nil {
+		return fmt.Errorf("refresh rule_FP for run %d: %w", runID, err)
+	}
+	if err := anasql.RefreshSystemProfileFPFN(set.Exp.DBPath, runID, flows); err != nil {
+		return fmt.Errorf("update system profile fp/fn for run %d: %w", runID, err)
+	}
+	return nil
+}
+
 func (s Scheduler) execute(ctx context.Context, typ types.FunctionType, input types.FunctionInput) ([]types.TrimDecision, error) {
 	var out []types.TrimDecision
 	for _, fn := range s.functions {

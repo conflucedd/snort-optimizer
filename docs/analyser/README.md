@@ -95,6 +95,7 @@ result, err := a.Run(ctx)
 
 `exp/snort.sqlite` 中额外维护：
 
+- `system_profiles.fp/fn`：对应轮次的总体流级 FP/FN 计数，即 `FalsePositiveFlows` 和 `MissedFlows`。
 - `rule_FP`：每轮 `run_id` 下每条规则的命中流统计和利用率。
 
 `rule_FP` 的核心字段：

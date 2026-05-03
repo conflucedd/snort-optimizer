@@ -38,7 +38,7 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 		Runs:           []types.RunResult{},
 	}
 	baseRuns, err := set.runAll(ctx, s.cfg, 0, func() error {
-		return anasql.RefreshRuleFP(set.Exp.DBPath, 0, flows)
+		return s.refreshExpDerivedStats(set, 0, flows)
 	})
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 			return nil, err
 		}
 		runs, err := set.runAll(ctx, s.cfg, nextRunID, func() error {
-			return anasql.RefreshRuleFP(set.Exp.DBPath, nextRunID, flows)
+			return s.refreshExpDerivedStats(set, nextRunID, flows)
 		})
 		if err != nil {
 			return nil, err
@@ -138,7 +138,7 @@ func (s Scheduler) Run(ctx context.Context) (*types.Result, error) {
 				return nil, err
 			}
 			runs, err := set.runAll(ctx, s.cfg, nextRunID, func() error {
-				return anasql.RefreshRuleFP(set.Exp.DBPath, nextRunID, flows)
+				return s.refreshExpDerivedStats(set, nextRunID, flows)
 			})
 			if err != nil {
 				return nil, err

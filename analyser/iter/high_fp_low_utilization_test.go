@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"snort-optimizer/analyser/types"
@@ -68,5 +69,11 @@ INSERT INTO rule_FP (run_id, gid, sid, rev, source_file, msg, alerted_flows, ben
 	}
 	if got[0].SID != 1001 {
 		t.Fatalf("SID = %d, want 1001", got[0].SID)
+	}
+	if !strings.Contains(got[0].Reason, "rule_fp_rate=1.0000") {
+		t.Fatalf("reason = %q, want rule_fp_rate", got[0].Reason)
+	}
+	if got[0].Metrics["rule_fp_rate"] != 1 {
+		t.Fatalf("rule_fp_rate metric = %v, want 1", got[0].Metrics["rule_fp_rate"])
 	}
 }

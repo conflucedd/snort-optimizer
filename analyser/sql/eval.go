@@ -27,6 +27,27 @@ func EvaluateRun(expDBPath, realDBPath string, runID int64, flows FlowSet, stats
 	return eval, nil
 }
 
+// UpdateSystemProfileFPFN stores overall flow-level FP/FN counts for a run.
+func UpdateSystemProfileFPFN(dbPath string, runID int64, fpFlows, fnFlows int64) error {
+	conn, err := dbsql.Open("sqlite", dbPath)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	_, err = conn.Exec("UPDATE system_profiles SET fp = ?, fn = ? WHERE run_id = ?;", fpFlows, fnFlows, runID)
+	return err
+}
+
+// RefreshSystemProfileFPFN derives overall FP/FN counts from run alerts and writes them to system_profiles.
+func RefreshSystemProfileFPFN(dbPath string, runID int64, flows FlowSet) error {
+	alerts, err := loadEvalAlerts(dbPath, runID)
+	if err != nil {
+		return err
+	}
+	eval := evaluateAlerts(flows, alerts)
+	return UpdateSystemProfileFPFN(dbPath, runID, eval.FalsePositiveFlows, eval.MissedFlows)
+}
+
 func evaluateAlerts(flows FlowSet, alerts []AlertForEval) types.Evaluation {
 	alerted := make(map[int]bool)
 	matches, unmatched := matchAlertsToFlows(flows, alerts)
