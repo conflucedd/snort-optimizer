@@ -24,3 +24,16 @@ alert_json.txt
 *.sqlite
 analyser/cmd/cmd
 wrap/cmd/cmd
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+!web/package.json
+!web/package-lock.json
+!web/tsconfig.json
+server/server.db*
+server/AWD/*
+server/SWD/*
+server/pcap/*
+!server/AWD/.gitkeep
+!server/SWD/.gitkeep
+!server/pcap/.gitkeep

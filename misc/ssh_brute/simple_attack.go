@@ -11,7 +11,7 @@ func main() {
 	timeout := 2 * time.Second
 
 	// Bind to secondary IP
-	localAddr, _ := net.ResolveTCPAddr("tcp", "192.168.1.175:0")
+	localAddr, _ := net.ResolveTCPAddr("tcp", "192.168.1.4:0")
 
 	for i := 1; i <= attempts; i++ {
 		fmt.Printf("Attempt %d/%d... ", i, attempts)
