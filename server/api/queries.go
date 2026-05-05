@@ -92,9 +92,10 @@ func alertWhere(q alertQuery) (string, []any) {
 	if q.Search != "" {
 		where = append(where, `(CAST(id AS TEXT) LIKE ? OR CAST(run_id AS TEXT) LIKE ? OR timestamp LIKE ? OR proto LIKE ?
 OR src_ap LIKE ? OR dst_ap LIKE ? OR CAST(gid AS TEXT) LIKE ? OR CAST(sid AS TEXT) LIKE ?
-OR CAST(rev AS TEXT) LIKE ? OR rule LIKE ? OR action LIKE ? OR created_at LIKE ?)`)
+OR CAST(gid AS TEXT) || ':' || CAST(sid AS TEXT) LIKE ? OR CAST(rev AS TEXT) LIKE ?
+OR rule LIKE ? OR action LIKE ? OR created_at LIKE ?)`)
 		like := "%" + q.Search + "%"
-		for i := 0; i < 12; i++ {
+		for i := 0; i < 13; i++ {
 			args = append(args, like)
 		}
 	}
@@ -217,7 +218,7 @@ FROM system_profiles WHERE run_id = ? ORDER BY id DESC LIMIT ?;`, runID, limit)
 	return out, rows.Err()
 }
 
-func loadAnalysisResult(workDir string, decisionLimit, decisionOffset, fpLimit int) (*AnalysisResultView, error) {
+func loadAnalysisResult(workDir string, decisionLimit, decisionOffset int, decisionSearch string, fpLimit int) (*AnalysisResultView, error) {
 	dbPath := filepath.Join(workDir, "analyser.db")
 	if _, err := os.Stat(dbPath); err != nil {
 		return nil, err
@@ -239,15 +240,16 @@ func loadAnalysisResult(workDir string, decisionLimit, decisionOffset, fpLimit i
 	}
 	var trimmedCount int64
 	_ = conn.QueryRow("SELECT count(*) FROM trim_decisions WHERE committed = 1;").Scan(&trimmedCount)
+	decisionWhere, decisionArgs := trimDecisionWhere(decisionSearch)
 	var decisionTotal int64
-	_ = conn.QueryRow("SELECT count(*) FROM trim_decisions;").Scan(&decisionTotal)
+	_ = conn.QueryRow("SELECT count(*) FROM trim_decisions WHERE "+decisionWhere+";", decisionArgs...).Scan(&decisionTotal)
 	if decisionLimit <= 0 {
 		decisionLimit = 80
 	}
 	if decisionOffset < 0 {
 		decisionOffset = 0
 	}
-	decisions, _ := queryTrimDecisions(conn, decisionLimit, decisionOffset)
+	decisions, _ := queryTrimDecisions(conn, decisionLimit, decisionOffset, decisionWhere, decisionArgs)
 	ruleFP, _ := queryRuleFP(filepath.Join(workDir, "exp", "snort.sqlite"), finalRunID, fpLimit)
 	return &AnalysisResultView{
 		AnalyserDBPath:    dbPath,
@@ -291,10 +293,12 @@ FROM runs ORDER BY id;`)
 	return out, rows.Err()
 }
 
-func queryTrimDecisions(conn *sql.DB, limit, offset int) ([]TrimDecisionView, error) {
+func queryTrimDecisions(conn *sql.DB, limit, offset int, where string, args []any) ([]TrimDecisionView, error) {
+	queryArgs := append([]any{}, args...)
+	queryArgs = append(queryArgs, limit, offset)
 	rows, err := conn.Query(`SELECT run_id, gid, sid, rev, COALESCE(source_file, ''), COALESCE(msg, ''),
 reasons, functions, type, committed
-FROM trim_decisions ORDER BY committed DESC, run_id DESC, id DESC LIMIT ? OFFSET ?;`, limit, offset)
+FROM trim_decisions WHERE `+where+` ORDER BY committed DESC, run_id DESC, id DESC LIMIT ? OFFSET ?;`, queryArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -311,6 +315,22 @@ FROM trim_decisions ORDER BY committed DESC, run_id DESC, id DESC LIMIT ? OFFSET
 		out = append(out, item)
 	}
 	return out, rows.Err()
+}
+
+func trimDecisionWhere(search string) (string, []any) {
+	if strings.TrimSpace(search) == "" {
+		return "1=1", nil
+	}
+	like := "%" + strings.TrimSpace(search) + "%"
+	where := `(CAST(run_id AS TEXT) LIKE ? OR CAST(gid AS TEXT) LIKE ? OR CAST(sid AS TEXT) LIKE ?
+OR CAST(gid AS TEXT) || ':' || CAST(sid AS TEXT) LIKE ? OR CAST(rev AS TEXT) LIKE ?
+OR source_file LIKE ? OR msg LIKE ? OR reasons LIKE ?
+OR functions LIKE ? OR type LIKE ?)`
+	args := make([]any, 0, 10)
+	for i := 0; i < 10; i++ {
+		args = append(args, like)
+	}
+	return where, args
 }
 
 func queryRuleFP(dbPath string, runID int64, limit int) ([]RuleFPView, error) {
@@ -344,7 +364,7 @@ ORDER BY fp_rate DESC, alerted_flows DESC LIMIT ?;`, runID, limit)
 }
 
 func queryRecommendations(awd, prodDB string, prodRunID int64, limit int) ([]Recommendation, error) {
-	result, err := loadAnalysisResult(awd, limit, 0, limit)
+	result, err := loadAnalysisResult(awd, limit, 0, "", limit)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []Recommendation{}, nil

@@ -91,6 +91,7 @@ export function LineChart({
           tick={{ fill: "#6b7280", fontSize: 11 }}
           domain={yDomain}
           allowDataOverflow={maxValue !== undefined}
+          padding={{ top: 4, bottom: 6 }}
         />
         <Tooltip
           formatter={(value) => formatValue(Number(value))}

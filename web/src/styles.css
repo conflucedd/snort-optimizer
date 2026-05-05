@@ -400,6 +400,17 @@ h1 {
 
 .path-list > div {
   grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.path-list span {
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.path-list em {
+  justify-self: end;
 }
 
 .perf-config-grid {
@@ -680,6 +691,10 @@ td span {
 
 .mini-list > div {
   grid-template-columns: 130px minmax(0, 1fr) auto;
+}
+
+.mini-list.path-list > div {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .compact-list span {

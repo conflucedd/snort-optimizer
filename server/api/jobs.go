@@ -30,7 +30,7 @@ type strategySpec struct {
 	Fn   atypes.RegisteredFunction
 }
 
-func (s *Server) analysisStatus(decisionLimit, decisionOffset int) (AnalysisStatusResponse, error) {
+func (s *Server) analysisStatus(decisionLimit, decisionOffset int, decisionSearch string) (AnalysisStatusResponse, error) {
 	settings, err := s.currentSettings()
 	if err != nil {
 		return AnalysisStatusResponse{}, err
@@ -42,7 +42,7 @@ func (s *Server) analysisStatus(decisionLimit, decisionOffset int) (AnalysisStat
 	s.mu.Lock()
 	running := s.analysisCancel != nil
 	s.mu.Unlock()
-	result, _ := loadAnalysisResult(settings.AWD, decisionLimit, decisionOffset, 100)
+	result, _ := loadAnalysisResult(settings.AWD, decisionLimit, decisionOffset, decisionSearch, 100)
 	expected := expectedAnalysisRuns(job.ConfigJSON)
 	progress := 0.0
 	if result != nil && expected > 0 {
@@ -129,7 +129,7 @@ func (s *Server) startAnalysis(req AnalysisStartRequest) (AnalysisStatusResponse
 	s.analysisJobID = jobID
 	s.mu.Unlock()
 	go s.runAnalysisJob(ctx, job, cfg, req.Strategies, req.DisabledStrategies)
-	return s.analysisStatus(80, 0)
+	return s.analysisStatus(80, 0, "")
 }
 
 func (s *Server) runAnalysisJob(ctx context.Context, job store.JobRecord, cfg atypes.Config, strategies, disabled []string) {

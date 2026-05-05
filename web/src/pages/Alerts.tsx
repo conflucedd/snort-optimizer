@@ -10,7 +10,6 @@ type Props = {
 export function Alerts({ settings }: Props) {
   const [data, setData] = useState<AlertList>();
   const [query, setQuery] = useState("");
-  const [sid, setSid] = useState("");
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState("");
   const limit = 100;
@@ -22,7 +21,6 @@ export function Alerts({ settings }: Props) {
       offset: String(nextOffset)
     });
     if (query) params.set("q", query);
-    if (sid) params.set("sid", sid);
     try {
       setData(await api.alerts(params));
       setError("");
@@ -62,15 +60,6 @@ export function Alerts({ settings }: Props) {
               if (event.key === "Enter") submitSearch();
             }}
             placeholder="查询所有字段"
-          />
-          <input
-            className="sid-input"
-            value={sid}
-            onChange={(event) => setSid(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") submitSearch();
-            }}
-            placeholder="SID"
           />
           <button onClick={submitSearch}>查询</button>
         </div>

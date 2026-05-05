@@ -20,6 +20,8 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const [dbFiles, setDbFiles] = useState<FileItem[]>([]);
   const [applying, setApplying] = useState(false);
   const [decisionOffset, setDecisionOffset] = useState(0);
+  const [decisionQuery, setDecisionQuery] = useState("");
+  const [decisionSearch, setDecisionSearch] = useState("");
   const [awd, setAwd] = useState(settings?.awd ?? "AWD");
   const [form, setForm] = useState({
     pcap1: "data/Tuesday.pcap",
@@ -32,12 +34,13 @@ export function RuleOptimize({ settings, onSettings }: Props) {
 
   const decisionLimit = 80;
 
-  async function load(nextDecisionOffset = decisionOffset) {
+  async function load(nextDecisionOffset = decisionOffset, nextDecisionSearch = decisionSearch) {
     try {
       const params = new URLSearchParams({
         decision_limit: String(decisionLimit),
         decision_offset: String(nextDecisionOffset)
       });
+      if (nextDecisionSearch.trim()) params.set("decision_q", nextDecisionSearch.trim());
       setStatus(await api.analysisStatus(params));
       setError("");
     } catch (err) {
@@ -46,10 +49,10 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   }
 
   useEffect(() => {
-    load(decisionOffset);
-    const timer = window.setInterval(load, 4000);
+    load(decisionOffset, decisionSearch);
+    const timer = window.setInterval(() => load(decisionOffset, decisionSearch), 4000);
     return () => window.clearInterval(timer);
-  }, [decisionOffset]);
+  }, [decisionOffset, decisionSearch]);
 
   useEffect(() => {
     setAwd(settings?.awd ?? "AWD");
@@ -75,6 +78,8 @@ export function RuleOptimize({ settings, onSettings }: Props) {
     setError("");
     try {
       setDecisionOffset(0);
+      setDecisionQuery("");
+      setDecisionSearch("");
       const disabledStrategies = strategies
         .map((item) => item.name)
         .filter((name) => !selectedStrategies.includes(name));
@@ -98,7 +103,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   async function cancel() {
     try {
       await api.cancelAnalysis();
-      await load(decisionOffset);
+      await load(decisionOffset, decisionSearch);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -141,7 +146,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
       await api.applyAnalysis(runId);
       const response = await api.settings();
       onSettings(response.settings);
-      await load(decisionOffset);
+      await load(decisionOffset, decisionSearch);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -157,7 +162,14 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   function pageDecisions(delta: number) {
     const next = Math.max(0, decisionOffset + delta * decisionLimit);
     setDecisionOffset(next);
-    load(next);
+    load(next, decisionSearch);
+  }
+
+  function submitDecisionSearch() {
+    const nextSearch = decisionQuery.trim();
+    setDecisionSearch(nextSearch);
+    setDecisionOffset(0);
+    load(0, nextSearch);
   }
 
   const runs = status?.result?.runs ?? [];
@@ -330,6 +342,18 @@ export function RuleOptimize({ settings, onSettings }: Props) {
 
       <section className="panel">
         <div className="panel-title">提交规则</div>
+        <div className="searchbar compact">
+          <Search size={16} />
+          <input
+            value={decisionQuery}
+            onChange={(event) => setDecisionQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submitDecisionSearch();
+            }}
+            placeholder="SID、GID:SID、msg、source、reason"
+          />
+          <button onClick={submitDecisionSearch}>查询</button>
+        </div>
         <div className="compact-list">
           {(status?.result?.top_decisions ?? []).map((item) => (
             <div key={`${item.run_id}-${item.gid}-${item.sid}`}>
