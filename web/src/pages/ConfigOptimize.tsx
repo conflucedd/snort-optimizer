@@ -1,7 +1,7 @@
 import { Save, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, fmtNumber, pct } from "../api";
-import type { Recommendation, RuleList, Settings } from "../types";
+import type { Recommendation, RuleList, Settings, SystemStatus } from "../types";
 
 type Props = {
   settings?: Settings;
@@ -12,25 +12,28 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
   const [local, setLocal] = useState<Settings | undefined>(settings);
   const [rules, setRules] = useState<RuleList>();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [interfaces, setInterfaces] = useState<SystemStatus["interfaces"]>([]);
   const [query, setQuery] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => setLocal(settings), [settings]);
 
+  const dirty = useMemo(() => JSON.stringify(local) !== JSON.stringify(settings), [local, settings]);
+
   async function save() {
-    if (!local) return;
+    if (!local || !dirty) return;
     try {
       const response = await api.saveSettings(local);
       setLocal(response.settings);
       onSettings(response.settings);
-      setMessage("已保存");
+      setError("");
     } catch (err) {
-      setMessage((err as Error).message);
+      setError((err as Error).message);
     }
   }
 
   async function loadRules() {
-    const params = new URLSearchParams({ limit: "100", offset: "0", run_id: String(local?.active_run_id ?? 0) });
+    const params = new URLSearchParams({ limit: "100", offset: "0", run_id: "0" });
     if (query) params.set("q", query);
     const [ruleData, recData] = await Promise.all([api.rules(params), api.recommendations(120)]);
     setRules(ruleData);
@@ -38,11 +41,15 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
   }
 
   useEffect(() => {
-    loadRules().catch((err) => setMessage((err as Error).message));
-  }, [local?.active_run_id]);
+    loadRules().catch((err) => setError((err as Error).message));
+  }, [settings?.updated_at]);
+
+  useEffect(() => {
+    api.system().then((data) => setInterfaces(data.interfaces)).catch((err) => setError((err as Error).message));
+  }, []);
 
   async function toggle(gid: number, sid: number, enabled: boolean) {
-    await api.toggleRule({ gid, sid, enabled, run_id: local?.active_run_id ?? 0, reason: "manual" });
+    await api.toggleRule({ gid, sid, enabled, run_id: 0, reason: "manual" });
     await loadRules();
   }
 
@@ -53,13 +60,13 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
       <header className="page-head">
         <div>
           <h1>配置优化</h1>
-          <div className="muted">Lua overrides / manual rules</div>
+          <div className="muted">生产运行配置 / Lua overrides / manual rules</div>
         </div>
-        <button className="primary" onClick={save}>
+        <button className={dirty ? "primary" : ""} disabled={!dirty} onClick={save}>
           <Save size={16} /> 保存
         </button>
       </header>
-      {message ? <div className="banner">{message}</div> : null}
+      {error ? <div className="banner bad">{error}</div> : null}
 
       <section className="panel">
         <div className="panel-title">运行配置</div>
@@ -80,20 +87,16 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
             <input value={local.swd} onChange={(event) => setLocal({ ...local, swd: event.target.value })} />
           </label>
           <label>
-            <span>AWD</span>
-            <input value={local.awd} onChange={(event) => setLocal({ ...local, awd: event.target.value })} />
-          </label>
-          <label>
             <span>Interface</span>
-            <input value={local.interface} onChange={(event) => setLocal({ ...local, interface: event.target.value })} />
-          </label>
-          <label>
-            <span>Run ID</span>
-            <input
-              type="number"
-              value={local.active_run_id}
-              onChange={(event) => setLocal({ ...local, active_run_id: Number(event.target.value) })}
-            />
+            <select value={local.interface} onChange={(event) => setLocal({ ...local, interface: event.target.value })}>
+              <option value="">选择网卡</option>
+              {interfaces.map((item) => (
+                <option key={item.name} value={item.name}>
+                  {item.name}
+                  {item.up ? " up" : ""}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
       </section>

@@ -128,18 +128,14 @@ CREATE TABLE IF NOT EXISTS rule_overrides (
 
 func DefaultSettings(root string) AppSettings {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	serverRoot := filepath.Join(root, "server")
-	swd := filepath.Join(serverRoot, "SWD")
-	awd := filepath.Join(serverRoot, "AWD")
-	pcapDir := filepath.Join(serverRoot, "pcap")
 	return AppSettings{
 		RootDir:         root,
-		SWD:             swd,
-		AWD:             awd,
-		PcapDir:         pcapDir,
-		SnortConfigPath: filepath.Join(root, "config", "snort.lua"),
-		SnortDBPath:     filepath.Join(swd, "snort.sqlite"),
-		RawRulePath:     filepath.Join(root, "config", "rules"),
+		SWD:             "SWD",
+		AWD:             "AWD",
+		PcapDir:         "real_pcap",
+		SnortConfigPath: filepath.Join("config", "snort.lua"),
+		SnortDBPath:     filepath.Join("SWD", "snort.sqlite"),
+		RawRulePath:     filepath.Join("config", "rules"),
 		Interface:       "",
 		Mode:            "interface",
 		ActiveRunID:     0,
@@ -173,6 +169,8 @@ func (s *Store) GetSettings(root string) (AppSettings, error) {
 }
 
 func (s *Store) SaveSettings(settings AppSettings) error {
+	settings.ActiveRunID = 0
+	settings.NeedAlert = true
 	settings.UpdatedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	raw, err := json.Marshal(settings)
 	if err != nil {
@@ -331,36 +329,42 @@ func MarshalConfig(value any) (string, error) {
 
 func mergeSettingDefaults(settings AppSettings, root string) AppSettings {
 	defaults := DefaultSettings(root)
+	oldServerRoot := filepath.Join(root, "server")
 	if settings.RootDir == "" {
 		settings.RootDir = defaults.RootDir
 	}
-	if settings.SWD == "" {
+	if settings.SWD == "" || sameCleanPath(settings.SWD, filepath.Join(oldServerRoot, "SWD")) || sameCleanPath(settings.SWD, filepath.Join(root, "SWD")) {
 		settings.SWD = defaults.SWD
 	}
-	if settings.AWD == "" {
+	if settings.AWD == "" || sameCleanPath(settings.AWD, filepath.Join(oldServerRoot, "AWD")) || sameCleanPath(settings.AWD, filepath.Join(root, "AWD")) {
 		settings.AWD = defaults.AWD
 	}
-	if settings.PcapDir == "" {
+	if settings.PcapDir == "" || sameCleanPath(settings.PcapDir, filepath.Join(oldServerRoot, "pcap")) || sameCleanPath(settings.PcapDir, filepath.Join(root, "real_pcap")) {
 		settings.PcapDir = defaults.PcapDir
 	}
-	if settings.SnortConfigPath == "" {
+	if settings.SnortConfigPath == "" || sameCleanPath(settings.SnortConfigPath, filepath.Join(root, "config", "snort.lua")) {
 		settings.SnortConfigPath = defaults.SnortConfigPath
 	}
-	if settings.SnortDBPath == "" {
+	if settings.SnortDBPath == "" || sameCleanPath(settings.SnortDBPath, filepath.Join(oldServerRoot, "SWD", "snort.sqlite")) || sameCleanPath(settings.SnortDBPath, filepath.Join(root, "SWD", "snort.sqlite")) {
 		settings.SnortDBPath = filepath.Join(settings.SWD, "snort.sqlite")
 	}
-	if settings.RawRulePath == "" {
+	if settings.RawRulePath == "" || sameCleanPath(settings.RawRulePath, filepath.Join(root, "config", "rules")) {
 		settings.RawRulePath = defaults.RawRulePath
 	}
 	if settings.Mode == "" {
 		settings.Mode = defaults.Mode
 	}
-	if !settings.NeedAlert && !settings.NeedOutput && !settings.NeedProfiler {
-		settings.NeedAlert = defaults.NeedAlert
+	settings.ActiveRunID = 0
+	settings.NeedAlert = true
+	if !settings.NeedOutput && !settings.NeedProfiler {
 		settings.NeedOutput = defaults.NeedOutput
 		settings.NeedProfiler = defaults.NeedProfiler
 	}
 	return settings
+}
+
+func sameCleanPath(left, right string) bool {
+	return filepath.Clean(left) == filepath.Clean(right)
 }
 
 func NormalizePath(root, value string) string {

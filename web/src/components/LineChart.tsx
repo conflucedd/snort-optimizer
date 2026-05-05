@@ -1,3 +1,13 @@
+import {
+  CartesianGrid,
+  Line,
+  LineChart as RechartsLineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
+
 type Point = {
   label: string;
   value: number;
@@ -21,50 +31,49 @@ export function LineChart({
   valueSuffix = "",
   label
 }: Props) {
-  const width = 640;
-  const pad = 20;
-  const values = points.flatMap((point) => [point.value, point.alt ?? point.value]);
-  const max = Math.max(1, ...values);
-  const min = Math.min(0, ...values);
-  const toX = (index: number) => pad + (index * (width - pad * 2)) / Math.max(1, points.length - 1);
-  const toY = (value: number) => height - pad - ((value - min) * (height - pad * 2)) / Math.max(1, max - min);
-  const line = (selector: (point: Point) => number | undefined) =>
-    points
-      .map((point, index) => {
-        const value = selector(point);
-        if (value === undefined) return "";
-        return `${index === 0 ? "M" : "L"} ${toX(index).toFixed(1)} ${toY(value).toFixed(1)}`;
-      })
-      .join(" ");
+  const data = points.map((point, index) => ({ ...point, index }));
+  const hasAlt = points.some((point) => point.alt !== undefined);
+  const formatValue = (value: number) => `${value.toFixed(2)}${valueSuffix}`;
 
   return (
-    <div className="chart-wrap">
+    <div className="chart-wrap" style={{ height }}>
       {label ? <div className="chart-label">{label}</div> : null}
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label ?? "line chart"}>
-        <line x1={pad} x2={width - pad} y1={height - pad} y2={height - pad} className="axis" />
-        <line x1={pad} x2={pad} y1={pad} y2={height - pad} className="axis" />
-        {[0.25, 0.5, 0.75].map((step) => {
-          const y = pad + step * (height - pad * 2);
-          return <line key={step} x1={pad} x2={width - pad} y1={y} y2={y} className="grid" />;
-        })}
-        {points.length > 0 ? (
-          <>
-            <path d={line((point) => point.value)} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
-            {points.some((point) => point.alt !== undefined) ? (
-              <path d={line((point) => point.alt)} fill="none" stroke={altColor} strokeWidth="3" strokeLinecap="round" />
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsLineChart data={data} margin={{ top: 10, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid stroke="#eef0f4" vertical={false} />
+            <XAxis dataKey="index" type="category" hide />
+            <YAxis width={42} tickLine={false} axisLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} />
+            <Tooltip
+              formatter={(value) => formatValue(Number(value))}
+              labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
+              contentStyle={{ borderRadius: 6, borderColor: "#d7dce5", fontSize: 12 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2.5}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+            {hasAlt ? (
+              <Line
+                type="monotone"
+                dataKey="alt"
+                stroke={altColor}
+                strokeWidth={2.5}
+                dot={false}
+                isAnimationActive={false}
+                connectNulls
+              />
             ) : null}
-            {points.map((point, index) => (
-              <circle key={`${point.label}-${index}`} cx={toX(index)} cy={toY(point.value)} r="3.5" fill={color}>
-                <title>{`${point.label}: ${point.value.toFixed(2)}${valueSuffix}`}</title>
-              </circle>
-            ))}
-          </>
-        ) : (
-          <text x={width / 2} y={height / 2} textAnchor="middle" className="empty-chart">
-            暂无数据
-          </text>
-        )}
-      </svg>
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="line-chart-empty" />
+      )}
     </div>
   );
 }

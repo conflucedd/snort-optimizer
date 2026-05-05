@@ -1,12 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,8 +41,7 @@ func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
 	s.mu.Lock()
 	running := s.analysisCancel != nil
 	s.mu.Unlock()
-	result, resultErr := loadAnalysisResult(settings.AWD, 200, 100)
-	restored := !running && resultErr == nil && result != nil && len(result.Runs) > 0
+	result, _ := loadAnalysisResult(settings.AWD, 200, 100)
 	expected := expectedAnalysisRuns(job.ConfigJSON)
 	progress := 0.0
 	if result != nil && expected > 0 {
@@ -47,7 +50,7 @@ func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
 			progress = 1
 		}
 	}
-	if ok && (job.Status == "completed" || job.Status == "failed" || job.Status == "canceled") && result != nil {
+	if ok && job.Status == "completed" && result != nil {
 		progress = 1
 	}
 	var jobPtr *store.JobRecord
@@ -58,7 +61,7 @@ func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
 	return AnalysisStatusResponse{
 		Job:          jobPtr,
 		Running:      running,
-		Restored:     restored,
+		Restored:     false,
 		Progress:     progress,
 		ExpectedRuns: expected,
 		Result:       result,
@@ -75,17 +78,6 @@ func (s *Server) startAnalysis(req AnalysisStartRequest) (AnalysisStatusResponse
 		req.WorkDir = settings.AWD
 	} else {
 		req.WorkDir = store.NormalizePath(s.root, req.WorkDir)
-	}
-	if !req.ForceNew {
-		if result, err := loadAnalysisResult(req.WorkDir, 20, 20); err == nil && result != nil && len(result.Runs) > 0 {
-			return AnalysisStatusResponse{
-				Restored:     true,
-				Progress:     1,
-				ExpectedRuns: expectedAnalysisRunsFromRequest(req),
-				Result:       result,
-				WorkDir:      req.WorkDir,
-			}, nil
-		}
 	}
 	s.mu.Lock()
 	if s.analysisCancel != nil {
@@ -180,6 +172,171 @@ func (s *Server) runAnalysisJob(ctx context.Context, job store.JobRecord, cfg at
 		return
 	}
 	finish("completed", result, nil)
+}
+
+func (s *Server) startCapture(req CaptureStartRequest) (CaptureSummary, error) {
+	settings, err := s.currentSettings()
+	if err != nil {
+		return CaptureSummary{}, err
+	}
+	if req.Interface == "" {
+		req.Interface = settings.Interface
+	}
+	if strings.TrimSpace(req.Interface) == "" {
+		return CaptureSummary{}, fmt.Errorf("interface is required")
+	}
+	if req.DurationS <= 0 {
+		req.DurationS = 60
+	}
+	if req.DurationS > 3600 {
+		req.DurationS = 3600
+	}
+	if err := store.EnsureRuntimeDirs(settings); err != nil {
+		return CaptureSummary{}, err
+	}
+	jobID := uuid.NewString()
+	filename := cleanCaptureFilename(req.Filename)
+	if filename == "" {
+		filename = fmt.Sprintf("real_%s_%s.pcap", time.Now().UTC().Format("20060102_150405"), sanitizeFilenamePart(req.Interface))
+	}
+	path := filepath.Join(settings.PcapDir, filename)
+	rawCfg, _ := store.MarshalConfig(map[string]any{"request": req, "path": path})
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	job := store.JobRecord{
+		ID: jobID, Kind: "capture", Status: "running", WorkDir: settings.PcapDir,
+		ConfigJSON: rawCfg, StartedAt: now, UpdatedAt: now,
+	}
+	s.mu.Lock()
+	if s.captureCancel != nil {
+		s.mu.Unlock()
+		return CaptureSummary{}, fmt.Errorf("capture job is already running")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	s.captureCancel = cancel
+	s.captureJobID = jobID
+	s.mu.Unlock()
+	if err := s.store.UpsertJob(job); err != nil {
+		s.mu.Lock()
+		if s.captureJobID == jobID {
+			s.captureCancel = nil
+			s.captureJobID = ""
+		}
+		s.mu.Unlock()
+		cancel()
+		return CaptureSummary{}, err
+	}
+	go s.runCaptureJob(ctx, job, req.Interface, req.DurationS, path)
+	return CaptureSummary{ID: jobID, Status: "running", StartedAt: now}, nil
+}
+
+func (s *Server) runCaptureJob(ctx context.Context, job store.JobRecord, iface string, durationS int, path string) {
+	start := time.Now()
+	finish := func(status string, result *CaptureResult, err error) {
+		job.Status = status
+		if result != nil {
+			raw, _ := json.Marshal(result)
+			job.ResultJSON = string(raw)
+		}
+		if err != nil {
+			job.Error = err.Error()
+		}
+		job.FinishedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		job.UpdatedAt = job.FinishedAt
+		_ = s.store.UpsertJob(job)
+		s.mu.Lock()
+		if s.captureJobID == job.ID {
+			s.captureCancel = nil
+			s.captureJobID = ""
+		}
+		s.mu.Unlock()
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		finish("failed", nil, err)
+		return
+	}
+	args := []string{"-i", iface, "-s", "0", "-U", "-w", path}
+	cmd := exec.Command("tcpdump", args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	var stderr bytes.Buffer
+	cmd.Stdout = &stderr
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		finish("failed", nil, fmt.Errorf("start tcpdump: %w", err))
+		return
+	}
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	timer := time.NewTimer(time.Duration(durationS) * time.Second)
+	defer timer.Stop()
+	stoppedByTimer := false
+	select {
+	case <-ctx.Done():
+	case <-timer.C:
+		stoppedByTimer = true
+	case err := <-done:
+		timer.Stop()
+		if err != nil {
+			finish("failed", nil, fmt.Errorf("tcpdump exited: %w: %s", err, strings.TrimSpace(stderr.String())))
+			return
+		}
+	}
+	if stoppedByTimer || ctx.Err() != nil {
+		pgid, err := syscall.Getpgid(cmd.Process.Pid)
+		if err != nil {
+			pgid = cmd.Process.Pid
+		}
+		_ = syscall.Kill(-pgid, syscall.SIGINT)
+		select {
+		case err := <-done:
+			if err != nil && !stoppedByTimer && ctx.Err() == nil {
+				finish("failed", nil, fmt.Errorf("tcpdump stopped: %w: %s", err, strings.TrimSpace(stderr.String())))
+				return
+			}
+		case <-time.After(3 * time.Second):
+			_ = syscall.Kill(-pgid, syscall.SIGKILL)
+			<-done
+		}
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		finish("failed", nil, err)
+		return
+	}
+	status := "completed"
+	var finishErr error
+	if ctx.Err() != nil && !stoppedByTimer {
+		status = "canceled"
+		finishErr = ctx.Err()
+	}
+	finish(status, &CaptureResult{
+		Interface:  iface,
+		DurationMS: time.Since(start).Milliseconds(),
+		Path:       path,
+		Size:       info.Size(),
+		Command:    strings.Join(append([]string{"tcpdump"}, args...), " "),
+		Output:     strings.TrimSpace(stderr.String()),
+	}, finishErr)
+}
+
+func (s *Server) latestCaptureSummaries(limit int) []CaptureSummary {
+	jobs, err := s.store.ListJobs("capture", limit)
+	if err != nil {
+		return nil
+	}
+	out := []CaptureSummary{}
+	for _, job := range jobs {
+		item := CaptureSummary{
+			ID: job.ID, Status: job.Status, Error: job.Error, StartedAt: job.StartedAt, FinishedAt: job.FinishedAt,
+		}
+		if job.ResultJSON != "" {
+			var result CaptureResult
+			if json.Unmarshal([]byte(job.ResultJSON), &result) == nil {
+				item.Result = &result
+			}
+		}
+		out = append(out, item)
+	}
+	return out
 }
 
 func (s *Server) startPerfTest(req PerfTestStartRequest) (PerfTestSummary, error) {
@@ -431,6 +588,46 @@ func chooseString(value, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func cleanCaptureFilename(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	name := filepath.Base(value)
+	ext := strings.ToLower(filepath.Ext(name))
+	if ext != ".pcap" && ext != ".pcapng" {
+		name += ".pcap"
+	}
+	return sanitizeFilenamePart(name)
+}
+
+func sanitizeFilenamePart(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "capture"
+	}
+	var b strings.Builder
+	for _, r := range value {
+		switch {
+		case r >= 'a' && r <= 'z':
+			b.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r)
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == '.', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('_')
+		}
+	}
+	cleaned := strings.Trim(b.String(), "._-")
+	if cleaned == "" {
+		return "capture"
+	}
+	return cleaned
 }
 
 func sumRuleTime(dbPath string, runID int64) (int64, error) {

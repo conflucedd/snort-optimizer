@@ -176,6 +176,11 @@ export type AnalysisStatus = {
   work_dir: string;
 };
 
+export type AnalysisStrategy = {
+  name: string;
+  type: "SAFE" | "ITER" | string;
+};
+
 export type RuleItem = {
   run_id: number;
   gid: number;
@@ -226,6 +231,22 @@ export type PerfTestSummary = {
     rule_time_us: number;
     alert_count: number;
     rule_count: number;
+  };
+};
+
+export type CaptureSummary = {
+  id: string;
+  status: string;
+  error?: string;
+  started_at: string;
+  finished_at?: string;
+  result?: {
+    interface: string;
+    duration_ms: number;
+    path: string;
+    size: number;
+    command: string;
+    output?: string;
   };
 };
 

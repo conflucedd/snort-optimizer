@@ -1,10 +1,17 @@
-import { Play, RotateCcw, Square, RefreshCw, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { api, fmtNumber } from "../api";
+import { Camera, Play, RotateCcw, Square, RefreshCw, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { api, compactBytes, fmtNumber } from "../api";
 import { LineChart } from "../components/LineChart";
 import { MetricCard } from "../components/MetricCard";
 import { StatusPill } from "../components/StatusPill";
-import type { Overview as OverviewType, Settings, TelemetrySample } from "../types";
+import type {
+  CaptureSummary,
+  FileItem,
+  Overview as OverviewType,
+  Settings,
+  SystemStatus,
+  TelemetrySample
+} from "../types";
 
 type Props = {
   settings?: Settings;
@@ -21,7 +28,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
     try {
       const data = await api.overview();
       setOverview(data);
-      setHistory((prev) => [...prev.slice(-39), data.telemetry]);
+      setHistory((prev) => (data.running ? [...prev.slice(-59), data.telemetry] : []));
       setError("");
     } catch (err) {
       setError((err as Error).message);
@@ -48,31 +55,24 @@ export function Overview({ settings, onSettingsReload }: Props) {
     }
   }
 
-  const cpuPoints = history.map((point, index) => ({
-    label: new Date(point.time).toLocaleTimeString(),
-    value: point.cpu_percent,
-    alt: point.mem_mb
-  }));
-  const profilePoints = useMemo(
-    () =>
-      (overview?.profiles ?? []).map((point) => ({
-        label: `run ${point.run_id}`,
-        value: point.avg_cpu,
-        alt: point.avg_mem_mb
-      })),
-    [overview]
-  );
+  const running = Boolean(overview?.running);
+  const cpuPoints = running
+    ? history.map((point) => ({
+        label: new Date(point.time).toLocaleTimeString(),
+        value: point.cpu_percent,
+        alt: point.mem_mb
+      }))
+    : [];
 
   const tables = overview?.db_stats?.tables ?? {};
   const alerts = overview?.db_stats?.alerts ?? {};
-  const running = Boolean(overview?.running);
 
   return (
     <div className="page">
       <header className="page-head">
         <div>
           <h1>概览</h1>
-          <div className="muted">Run ID {settings?.active_run_id ?? 0}</div>
+          <div className="muted">{settings?.interface ? `Interface ${settings.interface}` : "Interface 未设置"}</div>
         </div>
         <div className="head-actions">
           <StatusPill tone={running ? "good" : "neutral"}>{running ? "运行中" : "已停止"}</StatusPill>
@@ -109,14 +109,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
             <span className="legend blue" /> Mem MB
           </div>
         </div>
-        <div className="panel">
-          <div className="panel-title">历史 Profile</div>
-          <LineChart points={profilePoints} label="profile" />
-          <div className="chart-legend">
-            <span className="legend orange" /> Avg CPU
-            <span className="legend blue" /> Avg Mem MB
-          </div>
-        </div>
+        <CapturePanel settings={settings} />
       </section>
 
       <section className="panel-grid two">
@@ -161,6 +154,92 @@ export function Overview({ settings, onSettingsReload }: Props) {
         </div>
         <PerfTestPanel />
       </section>
+    </div>
+  );
+}
+
+function CapturePanel({ settings }: { settings?: Settings }) {
+  const [interfaces, setInterfaces] = useState<SystemStatus["interfaces"]>([]);
+  const [selectedInterface, setSelectedInterface] = useState(settings?.interface ?? "");
+  const [durationS, setDurationS] = useState(60);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [captures, setCaptures] = useState<CaptureSummary[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function load() {
+    try {
+      const [system, pcapData, captureData] = await Promise.all([api.system(), api.pcapFiles(), api.captureStatus()]);
+      setInterfaces(system.interfaces);
+      setFiles(pcapData.files);
+      setCaptures(captureData.items);
+      setSelectedInterface((current) => current || settings?.interface || system.interfaces.find((item) => item.up)?.name || "");
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 3000);
+    return () => window.clearInterval(timer);
+  }, [settings?.interface]);
+
+  async function start() {
+    setError("");
+    setBusy(true);
+    try {
+      await api.startCapture({ interface: selectedInterface, duration_s: durationS });
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const latestRunning = captures.find((item) => item.status === "running");
+
+  return (
+    <div className="panel">
+      <div className="panel-title">真实流量抓包</div>
+      {error ? <div className="inline-error">{error}</div> : null}
+      <div className="form-grid capture-form">
+        <label>
+          <span>Interface</span>
+          <select value={selectedInterface} onChange={(event) => setSelectedInterface(event.target.value)}>
+            <option value="">选择网卡</option>
+            {interfaces.map((item) => (
+              <option key={item.name} value={item.name}>
+                {item.name}
+                {item.up ? " up" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>时长</span>
+          <input
+            type="number"
+            min={5}
+            max={3600}
+            value={durationS}
+            onChange={(event) => setDurationS(Number(event.target.value))}
+          />
+        </label>
+      </div>
+      <button className="primary" disabled={busy || !selectedInterface || Boolean(latestRunning)} onClick={start}>
+        <Camera size={16} /> {latestRunning ? "抓包中" : "开始抓包"}
+      </button>
+      <div className="compact-list mini-list">
+        {files.slice(0, 5).map((file) => (
+          <div key={file.path}>
+            <strong>{file.name}</strong>
+            <span>{file.path}</span>
+            <em>{compactBytes(file.size)}</em>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

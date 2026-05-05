@@ -31,9 +31,17 @@ web/*.tsbuildinfo
 !web/package-lock.json
 !web/tsconfig.json
 server/server.db*
+server.db*
+server/server/
 server/AWD/*
 server/SWD/*
 server/pcap/*
+AWD/*
+SWD/*
+real_pcap/*
 !server/AWD/.gitkeep
 !server/SWD/.gitkeep
 !server/pcap/.gitkeep
+!AWD/.gitkeep
+!SWD/.gitkeep
+!real_pcap/.gitkeep

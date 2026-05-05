@@ -1,17 +1,22 @@
-import { CheckCircle2, Play, RotateCcw, XCircle } from "lucide-react";
+import { CheckCircle2, Play, RotateCcw, Save, Square, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api, fmtNumber, pct } from "../api";
 import { LineChart } from "../components/LineChart";
 import { StatusPill } from "../components/StatusPill";
-import type { AnalysisStatus, Settings } from "../types";
+import type { AnalysisStrategy, AnalysisStatus, FileItem, Settings } from "../types";
 
 type Props = {
   settings?: Settings;
+  onSettings: (settings: Settings) => void;
 };
 
-export function RuleOptimize({ settings }: Props) {
+export function RuleOptimize({ settings, onSettings }: Props) {
   const [status, setStatus] = useState<AnalysisStatus>();
   const [error, setError] = useState("");
+  const [strategies, setStrategies] = useState<AnalysisStrategy[]>([]);
+  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [pcapFiles, setPcapFiles] = useState<FileItem[]>([]);
+  const [awd, setAwd] = useState(settings?.awd ?? "AWD");
   const [form, setForm] = useState({
     pcap1: "data/Tuesday.pcap",
     db1: "data/Tuesday.db",
@@ -19,6 +24,7 @@ export function RuleOptimize({ settings }: Props) {
     max_round: 4,
     factor: 0.8
   });
+  const awdDirty = Boolean(settings && awd !== settings.awd);
 
   async function load() {
     try {
@@ -35,22 +41,68 @@ export function RuleOptimize({ settings }: Props) {
     return () => window.clearInterval(timer);
   }, []);
 
-  async function start(forceNew: boolean) {
+  useEffect(() => {
+    setAwd(settings?.awd ?? "AWD");
+  }, [settings?.awd]);
+
+  useEffect(() => {
+    Promise.all([api.analysisStrategies(), api.pcapFiles()])
+      .then(([strategyData, pcapData]) => {
+        setStrategies(strategyData.items);
+        setSelectedStrategies((current) => (current.length > 0 ? current : strategyData.items.map((item) => item.name)));
+        setPcapFiles(pcapData.files);
+      })
+      .catch((err) => setError((err as Error).message));
+  }, []);
+
+  async function start() {
     setError("");
     try {
+      const disabledStrategies = strategies
+        .map((item) => item.name)
+        .filter((name) => !selectedStrategies.includes(name));
       setStatus(
         await api.startAnalysis({
           ...form,
           snort_config: settings?.snort_config_path,
           raw_snort_sqlite: settings?.raw_snort_sqlite,
           raw_rule_path: settings?.raw_rule_path,
-          work_dir: settings?.awd,
-          force_new: forceNew
+          work_dir: awd,
+          strategies: ["all"],
+          disabled_strategies: disabledStrategies,
+          force_new: true
         })
       );
     } catch (err) {
       setError((err as Error).message);
     }
+  }
+
+  async function cancel() {
+    try {
+      await api.cancelAnalysis();
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function saveAwd() {
+    if (!settings || !awdDirty) return;
+    try {
+      const response = await api.saveSettings({ ...settings, awd });
+      onSettings(response.settings);
+      setAwd(response.settings.awd);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  function toggleStrategy(name: string, enabled: boolean) {
+    setSelectedStrategies((current) => {
+      if (enabled) return Array.from(new Set([...current, name]));
+      return current.filter((item) => item !== name);
+    });
   }
 
   async function apply(runId: number) {
@@ -80,18 +132,19 @@ export function RuleOptimize({ settings }: Props) {
     [runs]
   );
   const finalRun = status?.result?.final_run_id ?? 0;
+  const jobStatus = status?.job?.status;
+  const statusText = status?.running ? "分析中" : jobStatus === "completed" ? "已完成" : status?.result ? "已有结果" : "空闲";
+  const hasResult = Boolean(status?.result?.runs?.length);
 
   return (
     <div className="page">
       <header className="page-head">
         <div>
           <h1>规则优化</h1>
-          <div className="muted">Workdir {status?.work_dir ?? settings?.awd}</div>
+          <div className="muted">Workdir {status?.work_dir ?? awd}</div>
         </div>
         <div className="head-actions">
-          <StatusPill tone={status?.running ? "warn" : status?.restored ? "good" : "neutral"}>
-            {status?.running ? "分析中" : status?.restored ? "已恢复" : "空闲"}
-          </StatusPill>
+          <StatusPill tone={status?.running ? "warn" : hasResult ? "good" : "neutral"}>{statusText}</StatusPill>
         </div>
       </header>
 
@@ -100,6 +153,10 @@ export function RuleOptimize({ settings }: Props) {
       <section className="panel">
         <div className="panel-title">分析任务</div>
         <div className="form-grid analysis-form">
+          <label>
+            <span>AWD</span>
+            <input value={awd} onChange={(event) => setAwd(event.target.value)} />
+          </label>
           <label>
             <span>实验 PCAP</span>
             <input value={form.pcap1} onChange={(event) => setForm({ ...form, pcap1: event.target.value })} />
@@ -110,7 +167,7 @@ export function RuleOptimize({ settings }: Props) {
           </label>
           <label>
             <span>真实 PCAP</span>
-            <input value={form.pcap2} onChange={(event) => setForm({ ...form, pcap2: event.target.value })} />
+            <input list="real-pcap-files" value={form.pcap2} onChange={(event) => setForm({ ...form, pcap2: event.target.value })} />
           </label>
           <label>
             <span>Max round</span>
@@ -123,6 +180,11 @@ export function RuleOptimize({ settings }: Props) {
             />
           </label>
         </div>
+        <datalist id="real-pcap-files">
+          {pcapFiles.map((file) => (
+            <option key={file.path} value={file.path} />
+          ))}
+        </datalist>
         <div className="progress-row">
           <div className="progress">
             <span style={{ width: `${Math.round((status?.progress ?? 0) * 100)}%` }} />
@@ -130,15 +192,37 @@ export function RuleOptimize({ settings }: Props) {
           <strong>{Math.round((status?.progress ?? 0) * 100)}%</strong>
         </div>
         <div className="button-row">
-          <button className="primary" disabled={status?.running} onClick={() => start(false)}>
-            <Play size={16} /> 开始 / 恢复
+          <button className={awdDirty ? "primary" : ""} disabled={!awdDirty} onClick={saveAwd}>
+            <Save size={16} /> 保存 AWD
           </button>
-          <button disabled={status?.running} onClick={() => start(true)}>
-            <RotateCcw size={16} /> 新分析
+          <button className="primary" disabled={status?.running} onClick={start}>
+            {hasResult ? <RotateCcw size={16} /> : <Play size={16} />} {hasResult ? "重新分析" : "开始分析"}
+          </button>
+          <button disabled={!status?.running} onClick={cancel}>
+            <Square size={16} /> 停止
           </button>
           <button disabled={status?.running || !status?.result} onClick={() => apply(finalRun)}>
             <CheckCircle2 size={16} /> 应用 run {finalRun}
           </button>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">分析策略</div>
+        <div className="toggle-grid strategy-grid">
+          {strategies.map((strategy) => (
+            <label key={strategy.name} className="toggle-card">
+              <input
+                type="checkbox"
+                checked={selectedStrategies.includes(strategy.name)}
+                onChange={(event) => toggleStrategy(strategy.name, event.target.checked)}
+              />
+              <span>
+                <strong>{strategy.name}</strong>
+                <small>{strategy.type}</small>
+              </span>
+            </label>
+          ))}
         </div>
       </section>
 

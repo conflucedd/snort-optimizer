@@ -98,6 +98,11 @@ type AnalysisStatusResponse struct {
 	WorkDir      string              `json:"work_dir"`
 }
 
+type AnalysisStrategy struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 type AnalysisResultView struct {
 	AnalyserDBPath string             `json:"analyser_db_path"`
 	FinalRunID     int64              `json:"final_run_id"`
@@ -207,6 +212,30 @@ type PerfTestResult struct {
 	RuleTimeUS int64         `json:"rule_time_us"`
 	AlertCount int64         `json:"alert_count"`
 	RuleCount  int64         `json:"rule_count"`
+}
+
+type CaptureStartRequest struct {
+	Interface string `json:"interface"`
+	DurationS int    `json:"duration_s"`
+	Filename  string `json:"filename"`
+}
+
+type CaptureSummary struct {
+	ID         string         `json:"id"`
+	Status     string         `json:"status"`
+	Error      string         `json:"error,omitempty"`
+	StartedAt  string         `json:"started_at"`
+	FinishedAt string         `json:"finished_at,omitempty"`
+	Result     *CaptureResult `json:"result,omitempty"`
+}
+
+type CaptureResult struct {
+	Interface  string `json:"interface"`
+	DurationMS int64  `json:"duration_ms"`
+	Path       string `json:"path"`
+	Size       int64  `json:"size"`
+	Command    string `json:"command"`
+	Output     string `json:"output,omitempty"`
 }
 
 type FileListResponse struct {

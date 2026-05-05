@@ -1,6 +1,8 @@
 import type {
   AlertList,
   AnalysisStatus,
+  AnalysisStrategy,
+  CaptureSummary,
   FileItem,
   Overview,
   Recommendation,
@@ -39,6 +41,7 @@ export const api = {
     request<Record<string, unknown>>("/api/perf-tests", { method: "POST", body: JSON.stringify(payload) }),
   alerts: (params: URLSearchParams) => request<AlertList>(`/api/alerts?${params.toString()}`),
   analysisStatus: () => request<AnalysisStatus>("/api/analysis/status"),
+  analysisStrategies: () => request<{ items: AnalysisStrategy[] }>("/api/analysis/strategies"),
   startAnalysis: (payload: Record<string, unknown>) =>
     request<AnalysisStatus>("/api/analysis/start", { method: "POST", body: JSON.stringify(payload) }),
   cancelAnalysis: () => request<Record<string, unknown>>("/api/analysis/cancel", { method: "POST", body: "{}" }),
@@ -57,7 +60,10 @@ export const api = {
     request<Record<string, unknown>>("/api/system/offload", { method: "POST", body: JSON.stringify(payload) }),
   setAffinity: (cpus: string) =>
     request<Record<string, unknown>>("/api/system/affinity", { method: "POST", body: JSON.stringify({ cpus }) }),
-  pcapFiles: () => request<{ files: FileItem[] }>("/api/files/pcaps")
+  pcapFiles: () => request<{ files: FileItem[] }>("/api/files/pcaps"),
+  startCapture: (payload: Record<string, unknown>) =>
+    request<CaptureSummary>("/api/capture/start", { method: "POST", body: JSON.stringify(payload) }),
+  captureStatus: () => request<{ items: CaptureSummary[] }>("/api/capture/status")
 };
 
 export function fmtNumber(value: number | undefined, digits = 0): string {

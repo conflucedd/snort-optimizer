@@ -36,6 +36,8 @@ type Server struct {
 	runner         *wrap.Runner
 	analysisCancel context.CancelFunc
 	analysisJobID  string
+	captureCancel  context.CancelFunc
+	captureJobID   string
 	perfCancels    map[string]context.CancelFunc
 	sampler        processSampler
 }
@@ -65,9 +67,12 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/perf-tests", s.handlePerfTests)
 	mux.HandleFunc("/api/alerts", s.handleAlerts)
 	mux.HandleFunc("/api/analysis/status", s.handleAnalysisStatus)
+	mux.HandleFunc("/api/analysis/strategies", s.handleAnalysisStrategies)
 	mux.HandleFunc("/api/analysis/start", s.handleAnalysisStart)
 	mux.HandleFunc("/api/analysis/cancel", s.handleAnalysisCancel)
 	mux.HandleFunc("/api/analysis/apply", s.handleAnalysisApply)
+	mux.HandleFunc("/api/capture/start", s.handleCaptureStart)
+	mux.HandleFunc("/api/capture/status", s.handleCaptureStatus)
 	mux.HandleFunc("/api/config/lua-presets", s.handleLuaPresets)
 	mux.HandleFunc("/api/config/rules", s.handleRules)
 	mux.HandleFunc("/api/config/rules/toggle", s.handleRuleToggle)
@@ -149,7 +154,6 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request) {
 	status := s.runnerStatus()
 	hash := configHash(settings)
 	dbStats := s.dbStats(settings)
-	profiles, _ := querySystemProfiles(settings.SnortDBPath, settings.ActiveRunID, 60)
 	perfTests := s.latestPerfSummaries(5)
 	response := OverviewResponse{
 		Status:       status,
@@ -158,7 +162,6 @@ func (s *Server) handleOverview(w http.ResponseWriter, r *http.Request) {
 		ConfigHash:   hash,
 		Telemetry:    s.telemetry(status.RunInfo.PID),
 		DBStats:      dbStats,
-		Profiles:     profiles,
 		PerfTests:    perfTests,
 	}
 	writeJSON(w, http.StatusOK, response)
@@ -297,6 +300,18 @@ func (s *Server) handleAnalysisStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, response)
 }
 
+func (s *Server) handleAnalysisStrategies(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	items := []AnalysisStrategy{}
+	for _, spec := range builtinStrategies() {
+		items = append(items, AnalysisStrategy{Name: spec.Name, Type: string(spec.Fn.Type)})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
 func (s *Server) handleAnalysisStart(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		methodNotAllowed(w)
@@ -379,6 +394,32 @@ func (s *Server) handleAnalysisApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "applied_run_id": req.RunID, "target_run_id": settings.ActiveRunID})
+}
+
+func (s *Server) handleCaptureStart(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+	var req CaptureStartRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	job, err := s.startCapture(req)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, job)
+}
+
+func (s *Server) handleCaptureStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": s.latestCaptureSummaries(10)})
 }
 
 func (s *Server) handleLuaPresets(w http.ResponseWriter, r *http.Request) {
@@ -608,9 +649,9 @@ func buildWrapConfig(settings store.AppSettings) wrap.Config {
 		RawRulePath:     settings.RawRulePath,
 		Interface:       settings.Interface,
 		PcapFile:        settings.PcapFile,
-		RunID:           settings.ActiveRunID,
+		RunID:           0,
 		NeedOutput:      settings.NeedOutput,
-		NeedAlert:       settings.NeedAlert,
+		NeedAlert:       true,
 		NeedProfiler:    settings.NeedProfiler,
 		LuaOverrides:    configoptimize.EnabledLuaValues(settings.LuaOverrides),
 	}
@@ -625,7 +666,6 @@ func configHash(settings store.AppSettings) string {
 		Mode            string   `json:"mode"`
 		Interface       string   `json:"interface"`
 		PcapFile        string   `json:"pcap_file"`
-		ActiveRunID     int64    `json:"active_run_id"`
 		NeedOutput      bool     `json:"need_output"`
 		NeedAlert       bool     `json:"need_alert"`
 		NeedProfiler    bool     `json:"need_profiler"`
@@ -638,9 +678,8 @@ func configHash(settings store.AppSettings) string {
 		Mode:            settings.Mode,
 		Interface:       settings.Interface,
 		PcapFile:        settings.PcapFile,
-		ActiveRunID:     settings.ActiveRunID,
 		NeedOutput:      settings.NeedOutput,
-		NeedAlert:       settings.NeedAlert,
+		NeedAlert:       true,
 		NeedProfiler:    settings.NeedProfiler,
 		Lua:             configoptimize.EnabledLuaValues(settings.LuaOverrides),
 	}
@@ -652,27 +691,27 @@ func configHash(settings store.AppSettings) string {
 func mergeIncomingSettings(root string, current, incoming store.AppSettings) store.AppSettings {
 	out := current
 	if incoming.SWD != "" {
-		out.SWD = store.NormalizePath(root, incoming.SWD)
+		out.SWD = cleanSettingPath(incoming.SWD)
 	}
 	if incoming.AWD != "" {
-		out.AWD = store.NormalizePath(root, incoming.AWD)
+		out.AWD = cleanSettingPath(incoming.AWD)
 	}
 	if incoming.PcapDir != "" {
-		out.PcapDir = store.NormalizePath(root, incoming.PcapDir)
+		out.PcapDir = cleanSettingPath(incoming.PcapDir)
 	}
 	if incoming.SnortConfigPath != "" {
-		out.SnortConfigPath = store.NormalizePath(root, incoming.SnortConfigPath)
+		out.SnortConfigPath = cleanSettingPath(incoming.SnortConfigPath)
 	}
 	if incoming.SnortDBPath != "" {
-		out.SnortDBPath = store.NormalizePath(root, incoming.SnortDBPath)
+		out.SnortDBPath = cleanSettingPath(incoming.SnortDBPath)
 	} else if incoming.SWD != "" {
 		out.SnortDBPath = filepath.Join(out.SWD, "snort.sqlite")
 	}
 	if incoming.RawRulePath != "" {
-		out.RawRulePath = store.NormalizePath(root, incoming.RawRulePath)
+		out.RawRulePath = cleanSettingPath(incoming.RawRulePath)
 	}
 	if incoming.RawSnortSQLite != "" {
-		out.RawSnortSQLite = store.NormalizePath(root, incoming.RawSnortSQLite)
+		out.RawSnortSQLite = cleanSettingPath(incoming.RawSnortSQLite)
 	}
 	if incoming.Interface != "" || current.Interface != "" {
 		out.Interface = incoming.Interface
@@ -681,16 +720,23 @@ func mergeIncomingSettings(root string, current, incoming store.AppSettings) sto
 		out.Mode = incoming.Mode
 	}
 	if incoming.PcapFile != "" || current.PcapFile != "" {
-		out.PcapFile = store.NormalizePath(root, incoming.PcapFile)
+		out.PcapFile = cleanSettingPath(incoming.PcapFile)
 	}
-	out.ActiveRunID = incoming.ActiveRunID
+	out.ActiveRunID = 0
 	out.NeedOutput = incoming.NeedOutput
-	out.NeedAlert = incoming.NeedAlert
+	out.NeedAlert = true
 	out.NeedProfiler = incoming.NeedProfiler
 	if incoming.LuaOverrides != nil {
 		out.LuaOverrides = incoming.LuaOverrides
 	}
 	return out
+}
+
+func cleanSettingPath(value string) string {
+	if value == "" {
+		return ""
+	}
+	return filepath.Clean(value)
 }
 
 func (s *Server) dbStats(settings store.AppSettings) map[string]any {

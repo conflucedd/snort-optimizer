@@ -49,7 +49,7 @@ export function App() {
         {error ? <div className="banner bad">{error}</div> : null}
         {page === "overview" ? <Overview settings={settings} onSettingsReload={loadSettings} /> : null}
         {page === "alerts" ? <Alerts settings={settings} /> : null}
-        {page === "rules" ? <RuleOptimize settings={settings} /> : null}
+        {page === "rules" ? <RuleOptimize settings={settings} onSettings={setSettings} /> : null}
         {page === "config" ? <ConfigOptimize settings={settings} onSettings={setSettings} /> : null}
         {page === "system" ? <SystemOptimize /> : null}
       </main>
