@@ -21,12 +21,14 @@ type Props = {
   color?: string;
   altColor?: string;
   valueSuffix?: string;
+  altValueSuffix?: string;
   label?: string;
   showDots?: boolean;
   fixedPointSpacing?: number;
   minValue?: number;
   maxValue?: number;
   padZeroLine?: boolean;
+  dualAxis?: boolean;
 };
 
 export function LineChart({
@@ -35,12 +37,14 @@ export function LineChart({
   color = "#f38020",
   altColor = "#2563eb",
   valueSuffix = "",
+  altValueSuffix = valueSuffix,
   label,
   showDots,
   fixedPointSpacing,
   minValue,
   maxValue,
-  padZeroLine = true
+  padZeroLine = true,
+  dualAxis
 }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -59,13 +63,12 @@ export function LineChart({
       : visiblePoints.map((point, index) => ({ ...point, index }));
   const hasAlt = points.some((point) => point.alt !== undefined);
   const dots = showDots ?? data.length <= 28;
-  const formatValue = (value: number) => `${value.toFixed(2)}${valueSuffix}`;
-  const numericValues = points.flatMap((point) => [point.value, point.alt]).filter((value): value is number => typeof value === "number");
-  const allZero = numericValues.length > 0 && numericValues.every((value) => value === 0);
-  const yDomain: [number | "auto", number | "auto"] = [
-    minValue ?? (padZeroLine && allZero ? -0.05 : "auto"),
-    maxValue ?? (padZeroLine && allZero ? 1 : "auto")
-  ];
+  const formatValue = (value: number, suffix: string) => `${value.toFixed(2)}${suffix}`;
+  const leftValues = points.map((point) => point.value).filter((value): value is number => typeof value === "number");
+  const altValues = points.map((point) => point.alt).filter((value): value is number => typeof value === "number");
+  const sharedValues = dualAxis ? leftValues : [...leftValues, ...altValues];
+  const yDomain = axisDomain(sharedValues, minValue, maxValue, padZeroLine);
+  const altYDomain = axisDomain(altValues, undefined, undefined, padZeroLine);
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -81,24 +84,38 @@ export function LineChart({
 
   function chart(width?: number, height?: number) {
     return (
-      <RechartsLineChart width={width} height={height} data={data} margin={{ top: 4, right: 10, bottom: 4, left: 0 }}>
+      <RechartsLineChart width={width} height={height} data={data} margin={{ top: 4, right: dualAxis ? 0 : 10, bottom: 4, left: 0 }}>
         <CartesianGrid stroke="#e8edf5" strokeDasharray="3 4" vertical={false} />
         <XAxis dataKey="index" type="category" hide />
         <YAxis
+          yAxisId="left"
           width={44}
           tickLine={false}
           axisLine={false}
-          tick={{ fill: "#6b7280", fontSize: 11 }}
+          tick={{ fill: dualAxis ? color : "#6b7280", fontSize: 11 }}
           domain={yDomain}
           allowDataOverflow={maxValue !== undefined}
           padding={{ top: 4, bottom: 6 }}
         />
+        {dualAxis && hasAlt ? (
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            width={44}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: altColor, fontSize: 11 }}
+            domain={altYDomain}
+            padding={{ top: 4, bottom: 6 }}
+          />
+        ) : null}
         <Tooltip
-          formatter={(value) => formatValue(Number(value))}
+          formatter={(value, name) => formatValue(Number(value), dualAxis && name === "alt" ? altValueSuffix : valueSuffix)}
           labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
           contentStyle={{ borderRadius: 6, borderColor: "#d7dce5", fontSize: 12 }}
         />
         <Line
+          yAxisId="left"
           type="linear"
           dataKey="value"
           stroke={color}
@@ -110,6 +127,7 @@ export function LineChart({
         />
         {hasAlt ? (
           <Line
+            yAxisId={dualAxis ? "right" : "left"}
             type="linear"
             dataKey="alt"
             stroke={altColor}
@@ -144,4 +162,12 @@ export function LineChart({
       </div>
     </div>
   );
+}
+
+function axisDomain(values: number[], minValue: number | undefined, maxValue: number | undefined, padZeroLine: boolean): [number | "auto", number | "auto"] {
+  const allZero = values.length > 0 && values.every((value) => value === 0);
+  return [
+    minValue ?? (padZeroLine && allZero ? -0.05 : "auto"),
+    maxValue ?? (padZeroLine && allZero ? 1 : "auto")
+  ];
 }

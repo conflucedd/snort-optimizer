@@ -318,7 +318,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
         </div>
         <div className="panel">
           <div className="panel-title">吞吐 / 耗时</div>
-          <LineChart points={throughputPoints} label="pkts/sec / seconds" />
+          <LineChart points={throughputPoints} label="pkts/sec / seconds" altValueSuffix=" s" dualAxis />
           <div className="chart-legend">
             <span className="legend orange" /> pkts/sec
             <span className="legend blue" /> seconds
