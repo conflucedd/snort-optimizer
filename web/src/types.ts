@@ -157,6 +157,9 @@ export type AnalysisResult = {
   final_run_id: number;
   runs: RunResult[];
   trimmed_count: number;
+  top_decision_total: number;
+  top_decision_limit: number;
+  top_decision_offset: number;
   top_decisions: TrimDecision[];
   rule_fp: RuleFP[];
 };
@@ -223,6 +226,7 @@ export type PerfTestSummary = {
   error?: string;
   started_at: string;
   finished_at?: string;
+  config?: LuaOverride[];
   result?: {
     run_id: number;
     mode: string;
@@ -230,6 +234,8 @@ export type PerfTestSummary = {
     work_dir: string;
     db_path: string;
     profiles: SystemPoint[];
+    throughput_pps: number;
+    throughput_mbps: number;
     rule_time_us: number;
     alert_count: number;
     rule_count: number;

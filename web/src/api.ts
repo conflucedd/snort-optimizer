@@ -41,7 +41,8 @@ export const api = {
   startPerfTest: (payload: Record<string, unknown>) =>
     request<Record<string, unknown>>("/api/perf-tests", { method: "POST", body: JSON.stringify(payload) }),
   alerts: (params: URLSearchParams) => request<AlertList>(`/api/alerts?${params.toString()}`),
-  analysisStatus: () => request<AnalysisStatus>("/api/analysis/status"),
+  analysisStatus: (params?: URLSearchParams) =>
+    request<AnalysisStatus>(`/api/analysis/status${params ? `?${params.toString()}` : ""}`),
   analysisStrategies: () => request<{ items: AnalysisStrategy[] }>("/api/analysis/strategies"),
   startAnalysis: (payload: Record<string, unknown>) =>
     request<AnalysisStatus>("/api/analysis/start", { method: "POST", body: JSON.stringify(payload) }),
@@ -62,9 +63,12 @@ export const api = {
   setAffinity: (cpus: string) =>
     request<Record<string, unknown>>("/api/system/affinity", { method: "POST", body: JSON.stringify({ cpus }) }),
   pcapFiles: () => request<{ files: FileItem[] }>("/api/files/pcaps"),
+  dbFiles: () => request<{ files: FileItem[] }>("/api/files/dbs"),
   startCapture: (payload: Record<string, unknown>) =>
     request<CaptureSummary>("/api/capture/start", { method: "POST", body: JSON.stringify(payload) }),
-  captureStatus: () => request<{ items: CaptureSummary[] }>("/api/capture/status")
+  stopCapture: () => request<Record<string, unknown>>("/api/capture/stop", { method: "POST", body: "{}" }),
+  captureStatus: () => request<{ items: CaptureSummary[] }>("/api/capture/status"),
+  stopPerfTest: () => request<Record<string, unknown>>("/api/perf-tests/stop", { method: "POST", body: "{}" })
 };
 
 export function fmtNumber(value: number | undefined, digits = 0): string {

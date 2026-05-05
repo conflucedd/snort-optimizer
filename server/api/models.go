@@ -104,12 +104,15 @@ type AnalysisStrategy struct {
 }
 
 type AnalysisResultView struct {
-	AnalyserDBPath string             `json:"analyser_db_path"`
-	FinalRunID     int64              `json:"final_run_id"`
-	Runs           []types.RunResult  `json:"runs"`
-	TrimmedCount   int64              `json:"trimmed_count"`
-	TopDecisions   []TrimDecisionView `json:"top_decisions"`
-	RuleFP         []RuleFPView       `json:"rule_fp"`
+	AnalyserDBPath    string             `json:"analyser_db_path"`
+	FinalRunID        int64              `json:"final_run_id"`
+	Runs              []types.RunResult  `json:"runs"`
+	TrimmedCount      int64              `json:"trimmed_count"`
+	TopDecisionTotal  int64              `json:"top_decision_total"`
+	TopDecisionLimit  int                `json:"top_decision_limit"`
+	TopDecisionOffset int                `json:"top_decision_offset"`
+	TopDecisions      []TrimDecisionView `json:"top_decisions"`
+	RuleFP            []RuleFPView       `json:"rule_fp"`
 }
 
 type TrimDecisionView struct {
@@ -195,12 +198,13 @@ type PerfTestStartRequest struct {
 }
 
 type PerfTestSummary struct {
-	ID         string          `json:"id"`
-	Status     string          `json:"status"`
-	Error      string          `json:"error,omitempty"`
-	StartedAt  string          `json:"started_at"`
-	FinishedAt string          `json:"finished_at,omitempty"`
-	Result     *PerfTestResult `json:"result,omitempty"`
+	ID         string              `json:"id"`
+	Status     string              `json:"status"`
+	Error      string              `json:"error,omitempty"`
+	StartedAt  string              `json:"started_at"`
+	FinishedAt string              `json:"finished_at,omitempty"`
+	Config     []store.LuaOverride `json:"config,omitempty"`
+	Result     *PerfTestResult     `json:"result,omitempty"`
 }
 
 type PerfTestResult struct {
@@ -210,6 +214,8 @@ type PerfTestResult struct {
 	WorkDir         string        `json:"work_dir"`
 	DBPath          string        `json:"db_path"`
 	Profiles        []SystemPoint `json:"profiles"`
+	ThroughputPPS   float64       `json:"throughput_pps"`
+	ThroughputMbps  float64       `json:"throughput_mbps"`
 	RuleTimeUS      int64         `json:"rule_time_us"`
 	AlertCount      int64         `json:"alert_count"`
 	RuleCount       int64         `json:"rule_count"`

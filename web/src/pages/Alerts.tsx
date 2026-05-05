@@ -61,7 +61,7 @@ export function Alerts({ settings }: Props) {
             onKeyDown={(event) => {
               if (event.key === "Enter") submitSearch();
             }}
-            placeholder="规则、源、目的"
+            placeholder="查询所有字段"
           />
           <input
             className="sid-input"

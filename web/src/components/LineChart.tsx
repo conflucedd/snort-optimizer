@@ -24,6 +24,9 @@ type Props = {
   label?: string;
   showDots?: boolean;
   fixedPointSpacing?: number;
+  minValue?: number;
+  maxValue?: number;
+  padZeroLine?: boolean;
 };
 
 export function LineChart({
@@ -34,18 +37,35 @@ export function LineChart({
   valueSuffix = "",
   label,
   showDots,
-  fixedPointSpacing
+  fixedPointSpacing,
+  minValue,
+  maxValue,
+  padZeroLine = true
 }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const spacing = fixedPointSpacing ?? 0;
-  const maxVisible = spacing > 0 && viewport.width > 0 ? Math.max(2, Math.floor((viewport.width - 62) / spacing) + 1) : points.length;
+  const maxVisible = spacing > 0 && viewport.width > 0 ? Math.max(2, Math.floor((viewport.width - 58) / spacing) + 1) : points.length;
   const visiblePoints = spacing > 0 ? points.slice(-maxVisible) : points;
-  const data = visiblePoints.map((point, index) => ({ ...point, index }));
+  const paddedCount = spacing > 0 && maxVisible > 0 ? maxVisible : visiblePoints.length;
+  const leadingEmpty = Math.max(0, paddedCount - visiblePoints.length);
+  const data =
+    spacing > 0
+      ? Array.from({ length: paddedCount }, (_, index) => {
+          if (index < leadingEmpty) return { label: "", value: null as number | null, alt: null as number | null, index };
+          const point = visiblePoints[index - leadingEmpty];
+          return { ...point, index };
+        })
+      : visiblePoints.map((point, index) => ({ ...point, index }));
   const hasAlt = points.some((point) => point.alt !== undefined);
   const dots = showDots ?? data.length <= 28;
   const formatValue = (value: number) => `${value.toFixed(2)}${valueSuffix}`;
-  const fixedWidth = spacing > 0 ? Math.max(86, (data.length - 1) * spacing + 62) : 0;
+  const numericValues = points.flatMap((point) => [point.value, point.alt]).filter((value): value is number => typeof value === "number");
+  const allZero = numericValues.length > 0 && numericValues.every((value) => value === 0);
+  const yDomain: [number | "auto", number | "auto"] = [
+    minValue ?? (padZeroLine && allZero ? -0.05 : "auto"),
+    maxValue ?? (padZeroLine && allZero ? 1 : "auto")
+  ];
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -61,15 +81,16 @@ export function LineChart({
 
   function chart(width?: number, height?: number) {
     return (
-      <RechartsLineChart width={width} height={height} data={data} margin={{ top: 8, right: 12, bottom: 0, left: -6 }}>
+      <RechartsLineChart width={width} height={height} data={data} margin={{ top: 4, right: 10, bottom: 4, left: 0 }}>
         <CartesianGrid stroke="#e8edf5" strokeDasharray="3 4" vertical={false} />
         <XAxis dataKey="index" type="category" hide />
         <YAxis
-          width={42}
+          width={44}
           tickLine={false}
           axisLine={false}
           tick={{ fill: "#6b7280", fontSize: 11 }}
-          domain={["auto", "auto"]}
+          domain={yDomain}
+          allowDataOverflow={maxValue !== undefined}
         />
         <Tooltip
           formatter={(value) => formatValue(Number(value))}
@@ -106,15 +127,13 @@ export function LineChart({
     <div className="chart-wrap" style={{ height }}>
       {label ? <div className="chart-label">{label}</div> : null}
       <div className="chart-viewport" ref={viewportRef}>
-        {data.length > 0 && spacing > 0 ? (
+        {points.length > 0 && spacing > 0 ? (
           viewport.height > 0 ? (
-            <div className="chart-fixed-inner" style={{ width: fixedWidth, height: viewport.height }}>
-              {chart(fixedWidth, viewport.height)}
-            </div>
+            chart(viewport.width, viewport.height)
           ) : (
             <div className="line-chart-empty" />
           )
-        ) : data.length > 0 ? (
+        ) : points.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             {chart()}
           </ResponsiveContainer>

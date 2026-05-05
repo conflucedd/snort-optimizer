@@ -60,8 +60,13 @@ export function Overview({ settings, onSettingsReload }: Props) {
   const cpuPoints = running
     ? history.map((point) => ({
         label: new Date(point.time).toLocaleTimeString(),
-        value: point.cpu_percent,
-        alt: point.mem_mb
+        value: point.cpu_percent
+      }))
+    : [];
+  const memPoints = running
+    ? history.map((point) => ({
+        label: new Date(point.time).toLocaleTimeString(),
+        value: point.mem_mb
       }))
     : [];
 
@@ -104,10 +109,21 @@ export function Overview({ settings, onSettingsReload }: Props) {
       <section className="panel-grid two">
         <div className="panel">
           <div className="panel-title">CPU / Mem</div>
-          <LineChart points={cpuPoints} valueSuffix="" label="live" fixedPointSpacing={22} showDots />
-          <div className="chart-legend">
-            <span className="legend orange" /> CPU %
-            <span className="legend blue" /> Mem MB
+          <div className="telemetry-charts">
+            <div>
+              <div className="telemetry-chart-head">
+                <strong>CPU</strong>
+                <span>0 - 100%</span>
+              </div>
+              <LineChart points={cpuPoints} height={130} fixedPointSpacing={18} showDots={false} minValue={0} maxValue={100} />
+            </div>
+            <div>
+              <div className="telemetry-chart-head">
+                <strong>Mem</strong>
+                <span>0 - auto MB</span>
+              </div>
+              <LineChart points={memPoints} height={130} color="#2563eb" fixedPointSpacing={18} showDots={false} minValue={0} />
+            </div>
           </div>
         </div>
         <CapturePanel settings={settings} />
@@ -153,7 +169,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
             </div>
           </div>
         </div>
-        <PerfTestPanel />
+        <PerfTestPanel settings={settings} />
       </section>
     </div>
   );
@@ -199,6 +215,19 @@ function CapturePanel({ settings }: { settings?: Settings }) {
     }
   }
 
+  async function stop() {
+    setError("");
+    setBusy(true);
+    try {
+      await api.stopCapture();
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const latestRunning = captures.find((item) => item.status === "running");
 
   return (
@@ -229,17 +258,21 @@ function CapturePanel({ settings }: { settings?: Settings }) {
           />
         </label>
       </div>
-      <button
-        className={latestRunning || busy ? "running" : "primary"}
-        disabled={busy || !selectedInterface || Boolean(latestRunning)}
-        onClick={start}
-      >
-        <Camera size={16} /> {busy ? "启动中" : latestRunning ? "抓包中" : "开始抓包"}
-      </button>
-      <div className="compact-list mini-list">
+      <div className="button-row">
+        <button
+          className={latestRunning || busy ? "running" : "primary"}
+          disabled={busy || !selectedInterface || Boolean(latestRunning)}
+          onClick={start}
+        >
+          <Camera size={16} /> {busy ? "启动中" : latestRunning ? "抓包中" : "开始抓包"}
+        </button>
+        <button disabled={busy || !latestRunning} onClick={stop}>
+          <Square size={16} /> 停止抓包
+        </button>
+      </div>
+      <div className="compact-list mini-list path-list">
         {files.slice(0, 5).map((file) => (
           <div key={file.path}>
-            <strong>{file.name}</strong>
             <span>{file.path}</span>
             <em>{compactBytes(file.size)}</em>
           </div>
@@ -249,7 +282,7 @@ function CapturePanel({ settings }: { settings?: Settings }) {
   );
 }
 
-function PerfTestPanel() {
+function PerfTestPanel({ settings }: { settings?: Settings }) {
   const [pcapFile, setPcapFile] = useState("");
   const [durationS, setDurationS] = useState(30);
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -284,9 +317,23 @@ function PerfTestPanel() {
     }
   }
 
+  async function stop() {
+    setMessage("");
+    setBusy(true);
+    try {
+      await api.stopPerfTest();
+      await load();
+    } catch (err) {
+      setMessage((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const latestRunning = tests.find((item) => item.status === "running");
   const latest = tests[0];
   const latestResult = latest?.result;
+  const configItems = latestRunning?.config?.length ? latestRunning.config : settings?.lua_overrides ?? latest?.config ?? [];
   const avgCPU =
     latestResult?.profiles && latestResult.profiles.length > 0
       ? latestResult.profiles.reduce((sum, item) => sum + item.avg_cpu, 0) / latestResult.profiles.length
@@ -309,7 +356,7 @@ function PerfTestPanel() {
       <div className="form-grid">
         <label>
           <span>PCAP</span>
-          <select value={pcapFile} onChange={(event) => setPcapFile(event.target.value)}>
+          <select value={pcapFile} disabled={Boolean(latestRunning)} onChange={(event) => setPcapFile(event.target.value)}>
             <option value="">使用当前网卡</option>
             {files.map((file) => (
               <option key={file.path} value={file.path}>
@@ -318,20 +365,38 @@ function PerfTestPanel() {
             ))}
           </select>
         </label>
-        <label>
-          <span>时长</span>
-          <input
-            type="number"
-            min={5}
-            max={3600}
-            value={durationS}
-            onChange={(event) => setDurationS(Number(event.target.value))}
-          />
-        </label>
+        {!pcapFile ? (
+          <label>
+            <span>时长</span>
+            <input
+              type="number"
+              min={5}
+              max={3600}
+              disabled={Boolean(latestRunning)}
+              value={durationS}
+              onChange={(event) => setDurationS(Number(event.target.value))}
+            />
+          </label>
+        ) : null}
       </div>
-      <button className={latestRunning || busy ? "running" : "primary"} disabled={busy || Boolean(latestRunning)} onClick={start}>
-        <Zap size={16} /> {busy ? "启动中" : latestRunning ? "测试中" : "运行测试"}
-      </button>
+      {configItems.length > 0 ? (
+        <div className="perf-config-grid">
+          {configItems.map((override) => (
+            <label key={override.id || override.value}>
+              <input type="checkbox" checked={override.enabled} disabled readOnly />
+              <span>{override.label || override.id || override.value}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
+      <div className="button-row">
+        <button className={latestRunning || busy ? "running" : "primary"} disabled={busy || Boolean(latestRunning)} onClick={start}>
+          <Zap size={16} /> {busy ? "启动中" : latestRunning ? "测试中" : "运行测试"}
+        </button>
+        <button disabled={busy || !latestRunning} onClick={stop}>
+          <Square size={16} /> 停止测试
+        </button>
+      </div>
       {statusMessage ? <div className="inline-message">{statusMessage}</div> : null}
       {latestResult ? (
         <div className="stats-table perf-stats">
@@ -350,6 +415,10 @@ function PerfTestPanel() {
           <div>
             <span>Rule time</span>
             <strong>{fmtNumber(latestResult.rule_time_us / 1000, 0)} ms</strong>
+          </div>
+          <div>
+            <span>Throughput</span>
+            <strong>{fmtNumber(latestResult.throughput_pps, 0)} pkt/s</strong>
           </div>
           <div>
             <span>Avg CPU</span>

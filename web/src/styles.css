@@ -365,7 +365,6 @@ h1 {
   min-width: 0;
   overflow: hidden;
   display: flex;
-  justify-content: flex-end;
   align-items: stretch;
 }
 
@@ -377,6 +376,52 @@ h1 {
 .chart-fixed-inner {
   flex: 0 0 auto;
   margin-left: auto;
+}
+
+.telemetry-charts {
+  display: grid;
+  gap: 12px;
+}
+
+.telemetry-chart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  color: #6b7280;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.telemetry-chart-head strong {
+  color: #111827;
+  font-size: 13px;
+}
+
+.path-list > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.perf-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.perf-config-grid label {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: #374151;
+  font-size: 12px;
+}
+
+.perf-config-grid input {
+  width: 14px;
+  min-height: 14px;
 }
 
 .axis {
@@ -795,6 +840,7 @@ td span {
   .settings-form,
   .analysis-form,
   .toggle-grid,
+  .perf-config-grid,
   .stats-table {
     grid-template-columns: 1fr;
   }

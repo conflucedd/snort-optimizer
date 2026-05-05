@@ -17,7 +17,9 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
   const [strategySaving, setStrategySaving] = useState("");
   const [pcapFiles, setPcapFiles] = useState<FileItem[]>([]);
+  const [dbFiles, setDbFiles] = useState<FileItem[]>([]);
   const [applying, setApplying] = useState(false);
+  const [decisionOffset, setDecisionOffset] = useState(0);
   const [awd, setAwd] = useState(settings?.awd ?? "AWD");
   const [form, setForm] = useState({
     pcap1: "data/Tuesday.pcap",
@@ -28,9 +30,15 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   });
   const awdDirty = Boolean(settings && awd !== settings.awd);
 
-  async function load() {
+  const decisionLimit = 80;
+
+  async function load(nextDecisionOffset = decisionOffset) {
     try {
-      setStatus(await api.analysisStatus());
+      const params = new URLSearchParams({
+        decision_limit: String(decisionLimit),
+        decision_offset: String(nextDecisionOffset)
+      });
+      setStatus(await api.analysisStatus(params));
       setError("");
     } catch (err) {
       setError((err as Error).message);
@@ -38,20 +46,21 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   }
 
   useEffect(() => {
-    load();
+    load(decisionOffset);
     const timer = window.setInterval(load, 4000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [decisionOffset]);
 
   useEffect(() => {
     setAwd(settings?.awd ?? "AWD");
   }, [settings?.awd]);
 
   useEffect(() => {
-    Promise.all([api.analysisStrategies(), api.pcapFiles()])
-      .then(([strategyData, pcapData]) => {
+    Promise.all([api.analysisStrategies(), api.pcapFiles(), api.dbFiles()])
+      .then(([strategyData, pcapData, dbData]) => {
         setStrategies(strategyData.items);
         setPcapFiles(pcapData.files);
+        setDbFiles(dbData.files);
       })
       .catch((err) => setError((err as Error).message));
   }, []);
@@ -65,6 +74,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   async function start() {
     setError("");
     try {
+      setDecisionOffset(0);
       const disabledStrategies = strategies
         .map((item) => item.name)
         .filter((name) => !selectedStrategies.includes(name));
@@ -88,7 +98,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   async function cancel() {
     try {
       await api.cancelAnalysis();
-      await load();
+      await load(decisionOffset);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -131,7 +141,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
       await api.applyAnalysis(runId);
       const response = await api.settings();
       onSettings(response.settings);
-      await load();
+      await load(decisionOffset);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -142,6 +152,12 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   function updateExperimentPcap(path: string) {
     const dbPath = path.replace(/\.(pcapng|pcap)$/i, ".db");
     setForm({ ...form, pcap1: path, db1: dbPath });
+  }
+
+  function pageDecisions(delta: number) {
+    const next = Math.max(0, decisionOffset + delta * decisionLimit);
+    setDecisionOffset(next);
+    load(next);
   }
 
   const runs = status?.result?.runs ?? [];
@@ -162,6 +178,8 @@ export function RuleOptimize({ settings, onSettings }: Props) {
     [runs]
   );
   const finalRun = status?.result?.final_run_id ?? 0;
+  const decisionTotal = status?.result?.top_decision_total ?? 0;
+  const dbSelectedExists = !form.db1 || dbFiles.some((file) => file.path === form.db1);
   const jobStatus = status?.job?.status;
   const statusText = status?.running ? "分析中" : jobStatus === "completed" ? "已完成" : status?.result ? "已有结果" : "空闲";
   const hasResult = Boolean(status?.result?.runs?.length);
@@ -201,7 +219,15 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           </label>
           <label>
             <span>标签 DB</span>
-            <input value={form.db1} onChange={(event) => setForm({ ...form, db1: event.target.value })} />
+            <select value={form.db1} onChange={(event) => setForm({ ...form, db1: event.target.value })}>
+              <option value="">选择 DB</option>
+              {!dbSelectedExists ? <option value={form.db1}>{form.db1}</option> : null}
+              {dbFiles.map((file) => (
+                <option key={file.path} value={file.path}>
+                  {file.path} ({compactBytes(file.size)})
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             <span>真实 PCAP</span>
@@ -302,30 +328,25 @@ export function RuleOptimize({ settings, onSettings }: Props) {
         </div>
       </section>
 
-      <section className="panel-grid two">
-        <div className="panel">
-          <div className="panel-title">提交规则</div>
-          <div className="compact-list">
-            {(status?.result?.top_decisions ?? []).slice(0, 80).map((item) => (
-              <div key={`${item.run_id}-${item.gid}-${item.sid}`}>
-                <strong>{item.gid}:{item.sid}</strong>
-                <span>{item.msg}</span>
-                <em>{item.committed ? "commit" : "rollback"}</em>
-              </div>
-            ))}
-          </div>
+      <section className="panel">
+        <div className="panel-title">提交规则</div>
+        <div className="compact-list">
+          {(status?.result?.top_decisions ?? []).map((item) => (
+            <div key={`${item.run_id}-${item.gid}-${item.sid}`}>
+              <strong>{item.gid}:{item.sid}</strong>
+              <span>{item.msg}</span>
+              <em>{item.committed ? "commit" : "rollback"}</em>
+            </div>
+          ))}
         </div>
-        <div className="panel">
-          <div className="panel-title">高误报规则</div>
-          <div className="compact-list">
-            {(status?.result?.rule_fp ?? []).slice(0, 80).map((item) => (
-              <div key={`${item.run_id}-${item.gid}-${item.sid}`}>
-                <strong>{item.gid}:{item.sid}</strong>
-                <span>{item.msg}</span>
-                <em>{pct(item.fp_rate)} / {pct(item.utilization)}</em>
-              </div>
-            ))}
-          </div>
+        <div className="pager">
+          <button disabled={decisionOffset === 0} onClick={() => pageDecisions(-1)}>上一页</button>
+          <span>
+            {decisionTotal === 0 ? 0 : fmtNumber(decisionOffset + 1)} - {fmtNumber(Math.min(decisionOffset + decisionLimit, decisionTotal))}
+            {" / "}
+            {fmtNumber(decisionTotal)}
+          </span>
+          <button disabled={decisionOffset + decisionLimit >= decisionTotal} onClick={() => pageDecisions(1)}>下一页</button>
         </div>
       </section>
 
@@ -337,12 +358,18 @@ export function RuleOptimize({ settings, onSettings }: Props) {
 function RuleSwitchPanel({ settings }: { settings?: Settings }) {
   const [rules, setRules] = useState<RuleList>();
   const [query, setQuery] = useState("");
+  const [offset, setOffset] = useState(0);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [togglingRule, setTogglingRule] = useState("");
+  const limit = 100;
 
-  async function loadRules() {
-    const params = new URLSearchParams({ limit: "100", offset: "0", run_id: String(settings?.active_run_id ?? 0) });
+  async function loadRules(nextOffset = offset) {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(nextOffset),
+      run_id: String(settings?.active_run_id ?? 0)
+    });
     const trimmed = query.trim();
     const pair = trimmed.match(/^(\d+)\s*:\s*(\d+)$/);
     if (pair) {
@@ -362,7 +389,8 @@ function RuleSwitchPanel({ settings }: { settings?: Settings }) {
   }
 
   useEffect(() => {
-    loadRules();
+    setOffset(0);
+    loadRules(0);
   }, [settings?.updated_at, settings?.active_run_id]);
 
   async function toggle(gid: number, sid: number, enabled: boolean) {
@@ -371,7 +399,7 @@ function RuleSwitchPanel({ settings }: { settings?: Settings }) {
     setMessage("");
     try {
       await api.toggleRule({ gid, sid, enabled, run_id: settings?.active_run_id ?? 0, reason: "manual" });
-      await loadRules();
+      await loadRules(offset);
       setMessage(`规则 ${key} 已${enabled ? "启用" : "禁用"}`);
       setError("");
     } catch (err) {
@@ -382,7 +410,14 @@ function RuleSwitchPanel({ settings }: { settings?: Settings }) {
   }
 
   function submitSearch() {
-    loadRules();
+    setOffset(0);
+    loadRules(0);
+  }
+
+  function page(delta: number) {
+    const next = Math.max(0, offset + delta * limit);
+    setOffset(next);
+    loadRules(next);
   }
 
   return (
@@ -420,6 +455,15 @@ function RuleSwitchPanel({ settings }: { settings?: Settings }) {
       </div>
       <div className="muted">
         显示 {fmtNumber(rules?.items.length ?? 0)} / {fmtNumber(rules?.total ?? 0)}
+      </div>
+      <div className="pager">
+        <button disabled={offset === 0} onClick={() => page(-1)}>上一页</button>
+        <span>
+          {(rules?.total ?? 0) === 0 ? 0 : fmtNumber(offset + 1)} - {fmtNumber(Math.min(offset + limit, rules?.total ?? 0))}
+          {" / "}
+          {fmtNumber(rules?.total ?? 0)}
+        </span>
+        <button disabled={offset + limit >= (rules?.total ?? 0)} onClick={() => page(1)}>下一页</button>
       </div>
     </section>
   );

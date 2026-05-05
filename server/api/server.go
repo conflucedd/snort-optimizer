@@ -59,12 +59,14 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/health", s.handleHealth)
 	mux.HandleFunc("/api/settings", s.handleSettings)
 	mux.HandleFunc("/api/files/pcaps", s.handlePcapFiles)
+	mux.HandleFunc("/api/files/dbs", s.handleDBFiles)
 	mux.HandleFunc("/api/overview", s.handleOverview)
 	mux.HandleFunc("/api/snort/start", s.handleSnortStart)
 	mux.HandleFunc("/api/snort/stop", s.handleSnortStop)
 	mux.HandleFunc("/api/snort/restart", s.handleSnortRestart)
 	mux.HandleFunc("/api/snort/reset", s.handleSnortReset)
 	mux.HandleFunc("/api/perf-tests", s.handlePerfTests)
+	mux.HandleFunc("/api/perf-tests/stop", s.handlePerfTestStop)
 	mux.HandleFunc("/api/alerts", s.handleAlerts)
 	mux.HandleFunc("/api/analysis/status", s.handleAnalysisStatus)
 	mux.HandleFunc("/api/analysis/strategies", s.handleAnalysisStrategies)
@@ -72,6 +74,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/analysis/cancel", s.handleAnalysisCancel)
 	mux.HandleFunc("/api/analysis/apply", s.handleAnalysisApply)
 	mux.HandleFunc("/api/capture/start", s.handleCaptureStart)
+	mux.HandleFunc("/api/capture/stop", s.handleCaptureStop)
 	mux.HandleFunc("/api/capture/status", s.handleCaptureStatus)
 	mux.HandleFunc("/api/config/lua-presets", s.handleLuaPresets)
 	mux.HandleFunc("/api/config/rules", s.handleRules)
@@ -138,6 +141,20 @@ func (s *Server) handlePcapFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	files := listFilesFromDirs(s.root, []string{"data", "real_pcap", settings.PcapDir}, []string{".pcap", ".pcapng"})
+	writeJSON(w, http.StatusOK, FileListResponse{Files: files})
+}
+
+func (s *Server) handleDBFiles(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	settings, err := s.currentSettings()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	files := listFilesFromDirs(s.root, []string{"data", "real_pcap", settings.PcapDir, settings.AWD}, []string{".db", ".sqlite"})
 	writeJSON(w, http.StatusOK, FileListResponse{Files: files})
 }
 
@@ -256,6 +273,23 @@ func (s *Server) handlePerfTests(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handlePerfTestStop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+	s.mu.Lock()
+	cancels := make([]context.CancelFunc, 0, len(s.perfCancels))
+	for _, cancel := range s.perfCancels {
+		cancels = append(cancels, cancel)
+	}
+	s.mu.Unlock()
+	for _, cancel := range cancels {
+		cancel()
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (s *Server) handleAlerts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
@@ -292,7 +326,10 @@ func (s *Server) handleAnalysisStatus(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-	response, err := s.analysisStatus()
+	q := r.URL.Query()
+	decisionLimit := clampInt(queryInt(q.Get("decision_limit"), 80), 1, 300)
+	decisionOffset := clampInt(queryInt(q.Get("decision_offset"), 0), 0, 1_000_000_000)
+	response, err := s.analysisStatus(decisionLimit, decisionOffset)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -377,7 +414,7 @@ func (s *Server) handleAnalysisApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.RunID == 0 {
-		result, err := loadAnalysisResult(settings.AWD, 200, 100)
+		result, err := loadAnalysisResult(settings.AWD, 200, 0, 100)
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err)
 			return
@@ -412,6 +449,20 @@ func (s *Server) handleCaptureStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, job)
+}
+
+func (s *Server) handleCaptureStop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+	s.mu.Lock()
+	cancel := s.captureCancel
+	s.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (s *Server) handleCaptureStatus(w http.ResponseWriter, r *http.Request) {

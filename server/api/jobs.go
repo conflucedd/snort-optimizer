@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,7 +30,7 @@ type strategySpec struct {
 	Fn   atypes.RegisteredFunction
 }
 
-func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
+func (s *Server) analysisStatus(decisionLimit, decisionOffset int) (AnalysisStatusResponse, error) {
 	settings, err := s.currentSettings()
 	if err != nil {
 		return AnalysisStatusResponse{}, err
@@ -41,7 +42,7 @@ func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
 	s.mu.Lock()
 	running := s.analysisCancel != nil
 	s.mu.Unlock()
-	result, _ := loadAnalysisResult(settings.AWD, 200, 100)
+	result, _ := loadAnalysisResult(settings.AWD, decisionLimit, decisionOffset, 100)
 	expected := expectedAnalysisRuns(job.ConfigJSON)
 	progress := 0.0
 	if result != nil && expected > 0 {
@@ -128,7 +129,7 @@ func (s *Server) startAnalysis(req AnalysisStartRequest) (AnalysisStatusResponse
 	s.analysisJobID = jobID
 	s.mu.Unlock()
 	go s.runAnalysisJob(ctx, job, cfg, req.Strategies, req.DisabledStrategies)
-	return s.analysisStatus()
+	return s.analysisStatus(80, 0)
 }
 
 func (s *Server) runAnalysisJob(ctx context.Context, job store.JobRecord, cfg atypes.Config, strategies, disabled []string) {
@@ -391,7 +392,12 @@ func (s *Server) startPerfTest(req PerfTestStartRequest) (PerfTestSummary, error
 	if err := copyRulesBetweenDBs(settings.SnortDBPath, dbPath, settings.ActiveRunID, runID); err != nil {
 		return PerfTestSummary{}, fmt.Errorf("copy production rules for performance test: %w", err)
 	}
-	rawCfg, _ := store.MarshalConfig(map[string]any{"request": req, "wrap": cfg, "source_db": settings.SnortDBPath})
+	rawCfg, _ := store.MarshalConfig(map[string]any{
+		"request":       req,
+		"wrap":          cfg,
+		"source_db":     settings.SnortDBPath,
+		"lua_overrides": settings.LuaOverrides,
+	})
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	job := store.JobRecord{
 		ID: jobID, Kind: "perf", Status: "running", WorkDir: workDir,
@@ -452,15 +458,25 @@ func (s *Server) runPerfJob(ctx context.Context, job store.JobRecord, cfg wrap.C
 		case <-timer.C:
 		}
 		timer.Stop()
-		_ = runner.Stop()
-	} else {
-		if err := runner.Wait(ctx); err != nil {
-			_ = runner.Stop()
+		if err := runner.Stop(); err != nil {
 			finish("failed", nil, err)
 			return
 		}
+	} else {
+		if err := runner.Wait(ctx); err != nil {
+			if ctx.Err() == nil {
+				_ = runner.Stop()
+				finish("failed", nil, err)
+				return
+			}
+			if stopErr := runner.Stop(); stopErr != nil {
+				finish("failed", nil, stopErr)
+				return
+			}
+		}
 	}
 	profiles, _ := querySystemProfiles(cfg.SnortDBPath, cfg.RunID, 20)
+	throughputPPS, throughputMbps := queryPerfThroughput(cfg.SnortDBPath, cfg.RunID)
 	ruleTime, _ := sumRuleTime(cfg.SnortDBPath, cfg.RunID)
 	alerts, _ := countTableRun(cfg.SnortDBPath, "alerts", cfg.RunID)
 	rules, _ := countTableRun(cfg.SnortDBPath, "rules", cfg.RunID)
@@ -471,6 +487,8 @@ func (s *Server) runPerfJob(ctx context.Context, job store.JobRecord, cfg wrap.C
 		WorkDir:         cfg.SnortWorkingDir,
 		DBPath:          cfg.SnortDBPath,
 		Profiles:        profiles,
+		ThroughputPPS:   throughputPPS,
+		ThroughputMbps:  throughputMbps,
 		RuleTimeUS:      ruleTime,
 		AlertCount:      alerts,
 		RuleCount:       rules,
@@ -487,6 +505,12 @@ func (s *Server) latestPerfSummaries(limit int) []PerfTestSummary {
 	for _, job := range jobs {
 		item := PerfTestSummary{
 			ID: job.ID, Status: job.Status, Error: job.Error, StartedAt: job.StartedAt, FinishedAt: job.FinishedAt,
+		}
+		var rawConfig struct {
+			LuaOverrides []store.LuaOverride `json:"lua_overrides"`
+		}
+		if job.ConfigJSON != "" && json.Unmarshal([]byte(job.ConfigJSON), &rawConfig) == nil {
+			item.Config = rawConfig.LuaOverrides
 		}
 		if job.ResultJSON != "" {
 			var result PerfTestResult
@@ -712,6 +736,29 @@ func countTableRun(dbPath, table string, runID int64) (int64, error) {
 	var value int64
 	err = conn.QueryRow("SELECT count(*) FROM "+table+" WHERE run_id = ?;", runID).Scan(&value)
 	return value, err
+}
+
+func queryPerfThroughput(dbPath string, runID int64) (float64, float64) {
+	conn, err := sqlOpen(dbPath)
+	if err != nil {
+		return 0, 0
+	}
+	defer conn.Close()
+	return queryProfilerMetricValue(conn, runID, []string{"pkts/sec", "packets/sec"}),
+		queryProfilerMetricValue(conn, runID, []string{"Mbits/sec", "mbits/sec"})
+}
+
+func queryProfilerMetricValue(conn *sql.DB, runID int64, metrics []string) float64 {
+	for _, metric := range metrics {
+		var value sql.NullFloat64
+		err := conn.QueryRow(`SELECT value FROM profiler_metrics
+WHERE run_id = ? AND lower(metric) = lower(?)
+ORDER BY id DESC LIMIT 1;`, runID, metric).Scan(&value)
+		if err == nil && value.Valid {
+			return value.Float64
+		}
+	}
+	return 0
 }
 
 func sortedStrategyNames() []string {
