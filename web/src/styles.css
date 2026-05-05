@@ -170,9 +170,9 @@ code {
 }
 
 .nav-button.active {
-  background: #111827;
+  background: #f38020;
   color: #fff;
-  border-color: #111827;
+  border-color: #f38020;
 }
 
 .run-dot {
