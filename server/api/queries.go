@@ -388,23 +388,31 @@ func queryRecommendations(awd, prodDB string, prodRunID int64, limit int) ([]Rec
 }
 
 func copyRulesBetweenDBs(sourceDB, targetDB string, sourceRunID, targetRunID int64) error {
-	if _, err := os.Stat(sourceDB); err != nil {
+	sourceAbs, err := filepath.Abs(sourceDB)
+	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(targetDB), 0755); err != nil {
+	targetAbs, err := filepath.Abs(targetDB)
+	if err != nil {
 		return err
 	}
-	conn, err := sqlOpen(targetDB)
+	if _, err := os.Stat(sourceAbs); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(targetAbs), 0755); err != nil {
+		return err
+	}
+	conn, err := sqlOpen(targetAbs)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	attach := "srcdb"
-	if _, err := conn.Exec("ATTACH DATABASE " + quote(sourceDB) + " AS " + attach + ";"); err != nil {
+	if _, err := conn.Exec("ATTACH DATABASE " + quote(sourceAbs) + " AS " + attach + ";"); err != nil {
 		return err
 	}
 	defer conn.Exec("DETACH DATABASE " + attach + ";")
-	_, err = conn.Exec(`
+	if _, err := conn.Exec(`
 CREATE TABLE IF NOT EXISTS rules (
 	run_id INTEGER NOT NULL DEFAULT 0,
 	sid INTEGER NOT NULL,
@@ -425,12 +433,24 @@ CREATE TABLE IF NOT EXISTS rules (
 	created_at TEXT NOT NULL,
 	PRIMARY KEY (run_id, gid, sid)
 );
-DELETE FROM rules WHERE run_id = ?;
+DELETE FROM rules WHERE run_id = ?;`, targetRunID); err != nil {
+		return err
+	}
+	if _, err := conn.Exec(`
 INSERT INTO rules
 (run_id, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, created_at)
 SELECT ?, sid, gid, rev, action, proto, src_net, src_port, direction, dst_net, dst_port, msg, classtype, enabled, source_file, raw_text, datetime('now')
-FROM srcdb.rules WHERE run_id = ?;`, targetRunID, targetRunID, sourceRunID)
-	return err
+FROM srcdb.rules WHERE run_id = ?;`, targetRunID, sourceRunID); err != nil {
+		return err
+	}
+	var copied int64
+	if err := conn.QueryRow("SELECT count(*) FROM rules WHERE run_id = ?;", targetRunID).Scan(&copied); err != nil {
+		return err
+	}
+	if copied == 0 {
+		return fmt.Errorf("source db %s has no rules for run-id %d", sourceAbs, sourceRunID)
+	}
+	return nil
 }
 
 func countRows(conn *sql.DB, table, where string, args []any) (int64, error) {

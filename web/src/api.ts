@@ -5,6 +5,7 @@ import type {
   CaptureSummary,
   FileItem,
   Overview,
+  PerfTestSummary,
   Recommendation,
   RuleList,
   Settings,
@@ -36,7 +37,7 @@ export const api = {
   stopSnort: () => request<Record<string, unknown>>("/api/snort/stop", { method: "POST", body: "{}" }),
   restartSnort: () => request<Record<string, unknown>>("/api/snort/restart", { method: "POST", body: "{}" }),
   resetSnort: () => request<Record<string, unknown>>("/api/snort/reset", { method: "POST", body: "{}" }),
-  perfTests: () => request<{ items: unknown[] }>("/api/perf-tests"),
+  perfTests: () => request<{ items: PerfTestSummary[] }>("/api/perf-tests"),
   startPerfTest: (payload: Record<string, unknown>) =>
     request<Record<string, unknown>>("/api/perf-tests", { method: "POST", body: JSON.stringify(payload) }),
   alerts: (params: URLSearchParams) => request<AlertList>(`/api/alerts?${params.toString()}`),

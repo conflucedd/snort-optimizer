@@ -8,6 +8,7 @@ import type {
   CaptureSummary,
   FileItem,
   Overview as OverviewType,
+  PerfTestSummary,
   Settings,
   SystemStatus,
   TelemetrySample
@@ -28,7 +29,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
     try {
       const data = await api.overview();
       setOverview(data);
-      setHistory((prev) => (data.running ? [...prev.slice(-59), data.telemetry] : []));
+      setHistory((prev) => (data.running ? [...prev.slice(-239), data.telemetry] : []));
       setError("");
     } catch (err) {
       setError((err as Error).message);
@@ -37,7 +38,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, 2500);
+    const timer = window.setInterval(load, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -103,7 +104,7 @@ export function Overview({ settings, onSettingsReload }: Props) {
       <section className="panel-grid two">
         <div className="panel">
           <div className="panel-title">CPU / Mem</div>
-          <LineChart points={cpuPoints} valueSuffix="" label="live" />
+          <LineChart points={cpuPoints} valueSuffix="" label="live" fixedPointSpacing={22} showDots />
           <div className="chart-legend">
             <span className="legend orange" /> CPU %
             <span className="legend blue" /> Mem MB
@@ -228,8 +229,12 @@ function CapturePanel({ settings }: { settings?: Settings }) {
           />
         </label>
       </div>
-      <button className="primary" disabled={busy || !selectedInterface || Boolean(latestRunning)} onClick={start}>
-        <Camera size={16} /> {latestRunning ? "抓包中" : "开始抓包"}
+      <button
+        className={latestRunning || busy ? "running" : "primary"}
+        disabled={busy || !selectedInterface || Boolean(latestRunning)}
+        onClick={start}
+      >
+        <Camera size={16} /> {busy ? "启动中" : latestRunning ? "抓包中" : "开始抓包"}
       </button>
       <div className="compact-list mini-list">
         {files.slice(0, 5).map((file) => (
@@ -247,17 +252,56 @@ function CapturePanel({ settings }: { settings?: Settings }) {
 function PerfTestPanel() {
   const [pcapFile, setPcapFile] = useState("");
   const [durationS, setDurationS] = useState(30);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [tests, setTests] = useState<PerfTestSummary[]>([]);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  async function load() {
+    const [pcapData, perfData] = await Promise.all([api.pcapFiles(), api.perfTests()]);
+    setFiles(pcapData.files);
+    setTests(perfData.items);
+  }
+
+  useEffect(() => {
+    load().catch((err) => setMessage((err as Error).message));
+    const timer = window.setInterval(() => {
+      load().catch((err) => setMessage((err as Error).message));
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function start() {
     setMessage("");
+    setBusy(true);
     try {
       await api.startPerfTest({ mode: pcapFile ? "pcap" : "interface", pcap_file: pcapFile, duration_s: durationS });
-      setMessage("已启动");
+      await load();
     } catch (err) {
       setMessage((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
+
+  const latestRunning = tests.find((item) => item.status === "running");
+  const latest = tests[0];
+  const latestResult = latest?.result;
+  const avgCPU =
+    latestResult?.profiles && latestResult.profiles.length > 0
+      ? latestResult.profiles.reduce((sum, item) => sum + item.avg_cpu, 0) / latestResult.profiles.length
+      : 0;
+  const avgMem =
+    latestResult?.profiles && latestResult.profiles.length > 0
+      ? latestResult.profiles.reduce((sum, item) => sum + item.avg_mem_mb, 0) / latestResult.profiles.length
+      : 0;
+  const statusMessage = latestRunning
+    ? "性能测试运行中"
+    : latest?.status === "completed"
+      ? "上次测试已完成"
+      : latest?.status === "failed"
+        ? latest.error
+        : message;
 
   return (
     <div className="panel">
@@ -265,7 +309,14 @@ function PerfTestPanel() {
       <div className="form-grid">
         <label>
           <span>PCAP</span>
-          <input value={pcapFile} onChange={(event) => setPcapFile(event.target.value)} placeholder="/path/to/sample.pcap" />
+          <select value={pcapFile} onChange={(event) => setPcapFile(event.target.value)}>
+            <option value="">使用当前网卡</option>
+            {files.map((file) => (
+              <option key={file.path} value={file.path}>
+                {file.path} ({compactBytes(file.size)})
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           <span>时长</span>
@@ -278,10 +329,38 @@ function PerfTestPanel() {
           />
         </label>
       </div>
-      <button className="primary" onClick={start}>
-        <Zap size={16} /> 运行测试
+      <button className={latestRunning || busy ? "running" : "primary"} disabled={busy || Boolean(latestRunning)} onClick={start}>
+        <Zap size={16} /> {busy ? "启动中" : latestRunning ? "测试中" : "运行测试"}
       </button>
-      {message ? <div className="inline-message">{message}</div> : null}
+      {statusMessage ? <div className="inline-message">{statusMessage}</div> : null}
+      {latestResult ? (
+        <div className="stats-table perf-stats">
+          <div>
+            <span>Duration</span>
+            <strong>{fmtNumber(latestResult.duration_ms / 1000, 1)} s</strong>
+          </div>
+          <div>
+            <span>Rules</span>
+            <strong>{fmtNumber(latestResult.loaded_rule_count || latestResult.rule_count)}</strong>
+          </div>
+          <div>
+            <span>Alerts</span>
+            <strong>{fmtNumber(latestResult.alert_count)}</strong>
+          </div>
+          <div>
+            <span>Rule time</span>
+            <strong>{fmtNumber(latestResult.rule_time_us / 1000, 0)} ms</strong>
+          </div>
+          <div>
+            <span>Avg CPU</span>
+            <strong>{fmtNumber(avgCPU, 1)}%</strong>
+          </div>
+          <div>
+            <span>Avg Mem</span>
+            <strong>{fmtNumber(avgMem, 1)} MB</strong>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

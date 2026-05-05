@@ -41,6 +41,11 @@ export function Alerts({ settings }: Props) {
     load(next);
   }
 
+  function submitSearch() {
+    setOffset(0);
+    load(0);
+  }
+
   return (
     <div className="page">
       <header className="page-head">
@@ -50,9 +55,24 @@ export function Alerts({ settings }: Props) {
         </div>
         <div className="searchbar">
           <Search size={16} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="规则、源、目的" />
-          <input className="sid-input" value={sid} onChange={(event) => setSid(event.target.value)} placeholder="SID" />
-          <button onClick={() => load(0)}>查询</button>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submitSearch();
+            }}
+            placeholder="规则、源、目的"
+          />
+          <input
+            className="sid-input"
+            value={sid}
+            onChange={(event) => setSid(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submitSearch();
+            }}
+            placeholder="SID"
+          />
+          <button onClick={submitSearch}>查询</button>
         </div>
       </header>
       {error ? <div className="banner bad">{error}</div> : null}

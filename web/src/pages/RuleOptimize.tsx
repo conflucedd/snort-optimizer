@@ -1,9 +1,9 @@
-import { CheckCircle2, Play, RotateCcw, Save, Square, XCircle } from "lucide-react";
+import { CheckCircle2, Play, RotateCcw, Save, Search, Square, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { api, fmtNumber, pct } from "../api";
+import { api, compactBytes, fmtNumber, pct } from "../api";
 import { LineChart } from "../components/LineChart";
 import { StatusPill } from "../components/StatusPill";
-import type { AnalysisStrategy, AnalysisStatus, FileItem, Settings } from "../types";
+import type { AnalysisStrategy, AnalysisStatus, FileItem, RuleList, Settings } from "../types";
 
 type Props = {
   settings?: Settings;
@@ -15,7 +15,9 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const [error, setError] = useState("");
   const [strategies, setStrategies] = useState<AnalysisStrategy[]>([]);
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
+  const [strategySaving, setStrategySaving] = useState("");
   const [pcapFiles, setPcapFiles] = useState<FileItem[]>([]);
+  const [applying, setApplying] = useState(false);
   const [awd, setAwd] = useState(settings?.awd ?? "AWD");
   const [form, setForm] = useState({
     pcap1: "data/Tuesday.pcap",
@@ -49,11 +51,16 @@ export function RuleOptimize({ settings, onSettings }: Props) {
     Promise.all([api.analysisStrategies(), api.pcapFiles()])
       .then(([strategyData, pcapData]) => {
         setStrategies(strategyData.items);
-        setSelectedStrategies((current) => (current.length > 0 ? current : strategyData.items.map((item) => item.name)));
         setPcapFiles(pcapData.files);
       })
       .catch((err) => setError((err as Error).message));
   }, []);
+
+  useEffect(() => {
+    if (strategies.length === 0) return;
+    const disabled = new Set(settings?.analysis_disabled_strategies ?? []);
+    setSelectedStrategies(strategies.map((item) => item.name).filter((name) => !disabled.has(name)));
+  }, [settings?.analysis_disabled_strategies, strategies]);
 
   async function start() {
     setError("");
@@ -98,20 +105,43 @@ export function RuleOptimize({ settings, onSettings }: Props) {
     }
   }
 
-  function toggleStrategy(name: string, enabled: boolean) {
-    setSelectedStrategies((current) => {
-      if (enabled) return Array.from(new Set([...current, name]));
-      return current.filter((item) => item !== name);
-    });
+  async function toggleStrategy(name: string, enabled: boolean) {
+    const nextSelected = enabled
+      ? Array.from(new Set([...selectedStrategies, name]))
+      : selectedStrategies.filter((item) => item !== name);
+    setSelectedStrategies(nextSelected);
+    if (!settings) return;
+    setStrategySaving(name);
+    try {
+      const selected = new Set(nextSelected);
+      const disabled = strategies.map((item) => item.name).filter((item) => !selected.has(item));
+      const response = await api.saveSettings({ ...settings, analysis_disabled_strategies: disabled });
+      onSettings(response.settings);
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setStrategySaving("");
+    }
   }
 
   async function apply(runId: number) {
+    setApplying(true);
     try {
       await api.applyAnalysis(runId);
+      const response = await api.settings();
+      onSettings(response.settings);
       await load();
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      setApplying(false);
     }
+  }
+
+  function updateExperimentPcap(path: string) {
+    const dbPath = path.replace(/\.(pcapng|pcap)$/i, ".db");
+    setForm({ ...form, pcap1: path, db1: dbPath });
   }
 
   const runs = status?.result?.runs ?? [];
@@ -135,6 +165,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const jobStatus = status?.job?.status;
   const statusText = status?.running ? "分析中" : jobStatus === "completed" ? "已完成" : status?.result ? "已有结果" : "空闲";
   const hasResult = Boolean(status?.result?.runs?.length);
+  const applied = finalRun > 0 && settings?.last_applied_final_run === finalRun;
 
   return (
     <div className="page">
@@ -159,7 +190,14 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           </label>
           <label>
             <span>实验 PCAP</span>
-            <input value={form.pcap1} onChange={(event) => setForm({ ...form, pcap1: event.target.value })} />
+            <select value={form.pcap1} onChange={(event) => updateExperimentPcap(event.target.value)}>
+              <option value="">选择 PCAP</option>
+              {pcapFiles.map((file) => (
+                <option key={file.path} value={file.path}>
+                  {file.path} ({compactBytes(file.size)})
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             <span>标签 DB</span>
@@ -167,7 +205,14 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           </label>
           <label>
             <span>真实 PCAP</span>
-            <input list="real-pcap-files" value={form.pcap2} onChange={(event) => setForm({ ...form, pcap2: event.target.value })} />
+            <select value={form.pcap2} onChange={(event) => setForm({ ...form, pcap2: event.target.value })}>
+              <option value="">选择 PCAP</option>
+              {pcapFiles.map((file) => (
+                <option key={file.path} value={file.path}>
+                  {file.path} ({compactBytes(file.size)})
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             <span>Max round</span>
@@ -180,11 +225,6 @@ export function RuleOptimize({ settings, onSettings }: Props) {
             />
           </label>
         </div>
-        <datalist id="real-pcap-files">
-          {pcapFiles.map((file) => (
-            <option key={file.path} value={file.path} />
-          ))}
-        </datalist>
         <div className="progress-row">
           <div className="progress">
             <span style={{ width: `${Math.round((status?.progress ?? 0) * 100)}%` }} />
@@ -201,8 +241,8 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           <button disabled={!status?.running} onClick={cancel}>
             <Square size={16} /> 停止
           </button>
-          <button disabled={status?.running || !status?.result} onClick={() => apply(finalRun)}>
-            <CheckCircle2 size={16} /> 应用 run {finalRun}
+          <button disabled={status?.running || !status?.result || finalRun <= 0 || applying || applied} onClick={() => apply(finalRun)}>
+            <CheckCircle2 size={16} /> {applied ? `已应用 run ${finalRun}` : `应用 run ${finalRun}`}
           </button>
         </div>
       </section>
@@ -215,6 +255,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
               <input
                 type="checkbox"
                 checked={selectedStrategies.includes(strategy.name)}
+                disabled={status?.running || strategySaving === strategy.name}
                 onChange={(event) => toggleStrategy(strategy.name, event.target.checked)}
               />
               <span>
@@ -287,6 +328,99 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           </div>
         </div>
       </section>
+
+      <RuleSwitchPanel settings={settings} />
     </div>
+  );
+}
+
+function RuleSwitchPanel({ settings }: { settings?: Settings }) {
+  const [rules, setRules] = useState<RuleList>();
+  const [query, setQuery] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [togglingRule, setTogglingRule] = useState("");
+
+  async function loadRules() {
+    const params = new URLSearchParams({ limit: "100", offset: "0", run_id: String(settings?.active_run_id ?? 0) });
+    const trimmed = query.trim();
+    const pair = trimmed.match(/^(\d+)\s*:\s*(\d+)$/);
+    if (pair) {
+      params.set("gid", pair[1]);
+      params.set("sid", pair[2]);
+    } else if (/^\d+$/.test(trimmed)) {
+      params.set("sid", trimmed);
+    } else if (trimmed) {
+      params.set("q", trimmed);
+    }
+    try {
+      setRules(await api.rules(params));
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  useEffect(() => {
+    loadRules();
+  }, [settings?.updated_at, settings?.active_run_id]);
+
+  async function toggle(gid: number, sid: number, enabled: boolean) {
+    const key = `${gid}:${sid}`;
+    setTogglingRule(key);
+    setMessage("");
+    try {
+      await api.toggleRule({ gid, sid, enabled, run_id: settings?.active_run_id ?? 0, reason: "manual" });
+      await loadRules();
+      setMessage(`规则 ${key} 已${enabled ? "启用" : "禁用"}`);
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setTogglingRule("");
+    }
+  }
+
+  function submitSearch() {
+    loadRules();
+  }
+
+  return (
+    <section className="panel">
+      <div className="panel-title">规则开关</div>
+      {error ? <div className="inline-error">{error}</div> : null}
+      {message ? <div className="inline-message">{message}</div> : null}
+      <div className="searchbar compact">
+        <Search size={16} />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") submitSearch();
+          }}
+          placeholder="SID、GID:SID、msg、source"
+        />
+        <button onClick={submitSearch}>查询</button>
+      </div>
+      <div className="compact-list">
+        {(rules?.items ?? []).map((rule) => (
+          <div key={`${rule.gid}-${rule.sid}`} className={!rule.enabled ? "row-disabled" : ""}>
+            <strong>{rule.gid}:{rule.sid}</strong>
+            <span>{rule.msg}</span>
+            <em>{rule.enabled ? "已启用" : "已禁用"}</em>
+            <button
+              className={rule.enabled ? "danger" : "success"}
+              disabled={togglingRule === `${rule.gid}:${rule.sid}`}
+              onClick={() => toggle(rule.gid, rule.sid, !rule.enabled)}
+            >
+              {togglingRule === `${rule.gid}:${rule.sid}` ? "处理中" : rule.enabled ? "禁用" : "启用"}
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="muted">
+        显示 {fmtNumber(rules?.items.length ?? 0)} / {fmtNumber(rules?.total ?? 0)}
+      </div>
+    </section>
   );
 }

@@ -204,14 +204,16 @@ type PerfTestSummary struct {
 }
 
 type PerfTestResult struct {
-	RunID      int64         `json:"run_id"`
-	Mode       string        `json:"mode"`
-	DurationMS int64         `json:"duration_ms"`
-	DBPath     string        `json:"db_path"`
-	Profiles   []SystemPoint `json:"profiles"`
-	RuleTimeUS int64         `json:"rule_time_us"`
-	AlertCount int64         `json:"alert_count"`
-	RuleCount  int64         `json:"rule_count"`
+	RunID           int64         `json:"run_id"`
+	Mode            string        `json:"mode"`
+	DurationMS      int64         `json:"duration_ms"`
+	WorkDir         string        `json:"work_dir"`
+	DBPath          string        `json:"db_path"`
+	Profiles        []SystemPoint `json:"profiles"`
+	RuleTimeUS      int64         `json:"rule_time_us"`
+	AlertCount      int64         `json:"alert_count"`
+	RuleCount       int64         `json:"rule_count"`
+	LoadedRuleCount int64         `json:"loaded_rule_count"`
 }
 
 type CaptureStartRequest struct {

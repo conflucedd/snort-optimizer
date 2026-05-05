@@ -59,6 +59,34 @@ button.warn {
   color: #9a3412;
 }
 
+button.danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+button.success {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+button.running {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+button.running:disabled {
+  opacity: 1;
+}
+
+button.muted-action {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #4b5563;
+}
+
 input,
 select {
   width: 100%;
@@ -331,9 +359,24 @@ h1 {
   margin-bottom: 6px;
 }
 
+.chart-viewport {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
 .chart-wrap .recharts-responsive-container {
   flex: 1;
   min-height: 0;
+}
+
+.chart-fixed-inner {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .axis {
@@ -377,6 +420,10 @@ h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
+}
+
+.perf-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .stats-table > div {
@@ -574,6 +621,11 @@ td span {
   border: 1px solid #edf0f5;
   border-radius: 6px;
   padding: 8px 10px;
+}
+
+.compact-list > div.row-disabled {
+  background: #f8fafc;
+  color: #6b7280;
 }
 
 .mini-list {

@@ -1,7 +1,7 @@
-import { Save, Search } from "lucide-react";
+import { Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { api, fmtNumber, pct } from "../api";
-import type { Recommendation, RuleList, Settings, SystemStatus } from "../types";
+import { api } from "../api";
+import type { Settings, SystemStatus } from "../types";
 
 type Props = {
   settings?: Settings;
@@ -10,10 +10,7 @@ type Props = {
 
 export function ConfigOptimize({ settings, onSettings }: Props) {
   const [local, setLocal] = useState<Settings | undefined>(settings);
-  const [rules, setRules] = useState<RuleList>();
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [interfaces, setInterfaces] = useState<SystemStatus["interfaces"]>([]);
-  const [query, setQuery] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => setLocal(settings), [settings]);
@@ -32,26 +29,9 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
     }
   }
 
-  async function loadRules() {
-    const params = new URLSearchParams({ limit: "100", offset: "0", run_id: "0" });
-    if (query) params.set("q", query);
-    const [ruleData, recData] = await Promise.all([api.rules(params), api.recommendations(120)]);
-    setRules(ruleData);
-    setRecommendations(recData.items);
-  }
-
-  useEffect(() => {
-    loadRules().catch((err) => setError((err as Error).message));
-  }, [settings?.updated_at]);
-
   useEffect(() => {
     api.system().then((data) => setInterfaces(data.interfaces)).catch((err) => setError((err as Error).message));
   }, []);
-
-  async function toggle(gid: number, sid: number, enabled: boolean) {
-    await api.toggleRule({ gid, sid, enabled, run_id: 0, reason: "manual" });
-    await loadRules();
-  }
 
   if (!local) return null;
 
@@ -122,44 +102,6 @@ export function ConfigOptimize({ settings, onSettings }: Props) {
               </span>
             </label>
           ))}
-        </div>
-      </section>
-
-      <section className="panel-grid two">
-        <div className="panel">
-          <div className="panel-title">智能建议</div>
-          <div className="compact-list">
-            {recommendations.map((item) => (
-              <div key={`${item.run_id}-${item.gid}-${item.sid}-${item.reason}`}>
-                <strong>{item.gid}:{item.sid}</strong>
-                <span>{item.msg || item.reason}</span>
-                <em>
-                  {item.fp_rate !== undefined ? `${pct(item.fp_rate)} FP` : item.recommendation}
-                </em>
-                <button onClick={() => toggle(item.gid, item.sid, false)}>禁用</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-title">规则开关</div>
-          <div className="searchbar compact">
-            <Search size={16} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="SID、msg、source" />
-            <button onClick={loadRules}>查询</button>
-          </div>
-          <div className="compact-list">
-            {(rules?.items ?? []).map((rule) => (
-              <div key={`${rule.gid}-${rule.sid}`}>
-                <strong>{rule.gid}:{rule.sid}</strong>
-                <span>{rule.msg}</span>
-                <em>{rule.enabled ? "enabled" : "disabled"}</em>
-                <button onClick={() => toggle(rule.gid, rule.sid, !rule.enabled)}>{rule.enabled ? "禁用" : "启用"}</button>
-              </div>
-            ))}
-          </div>
-          <div className="muted">显示 {fmtNumber(rules?.items.length ?? 0)} / {fmtNumber(rules?.total ?? 0)}</div>
         </div>
       </section>
     </div>

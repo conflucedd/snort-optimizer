@@ -50,7 +50,7 @@ func (s *Server) analysisStatus() (AnalysisStatusResponse, error) {
 			progress = 1
 		}
 	}
-	if ok && job.Status == "completed" && result != nil {
+	if result != nil && (!running || (ok && job.Status == "completed")) {
 		progress = 1
 	}
 	var jobPtr *store.JobRecord
@@ -197,7 +197,7 @@ func (s *Server) startCapture(req CaptureStartRequest) (CaptureSummary, error) {
 	jobID := uuid.NewString()
 	filename := cleanCaptureFilename(req.Filename)
 	if filename == "" {
-		filename = fmt.Sprintf("real_%s_%s.pcap", time.Now().UTC().Format("20060102_150405"), sanitizeFilenamePart(req.Interface))
+		filename = time.Now().UTC().Format("20060102_150405") + ".pcap"
 	}
 	path := filepath.Join(settings.PcapDir, filename)
 	rawCfg, _ := store.MarshalConfig(map[string]any{"request": req, "path": path})
@@ -255,7 +255,7 @@ func (s *Server) runCaptureJob(ctx context.Context, job store.JobRecord, iface s
 		return
 	}
 	args := []string{"-i", iface, "-s", "0", "-U", "-w", path}
-	cmd := exec.Command("tcpdump", args...)
+	cmd, displayCommand := captureCommand(args)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	var stderr bytes.Buffer
 	cmd.Stdout = &stderr
@@ -313,9 +313,23 @@ func (s *Server) runCaptureJob(ctx context.Context, job store.JobRecord, iface s
 		DurationMS: time.Since(start).Milliseconds(),
 		Path:       path,
 		Size:       info.Size(),
-		Command:    strings.Join(append([]string{"tcpdump"}, args...), " "),
+		Command:    displayCommand,
 		Output:     strings.TrimSpace(stderr.String()),
 	}, finishErr)
+}
+
+func captureCommand(args []string) (*exec.Cmd, string) {
+	tcpdumpPath, err := exec.LookPath("tcpdump")
+	if err != nil {
+		tcpdumpPath = "tcpdump"
+	}
+	if os.Geteuid() != 0 {
+		if pkexecPath, err := exec.LookPath("pkexec"); err == nil {
+			pkArgs := append([]string{tcpdumpPath}, args...)
+			return exec.Command(pkexecPath, pkArgs...), strings.Join(append([]string{"pkexec", tcpdumpPath}, args...), " ")
+		}
+	}
+	return exec.Command(tcpdumpPath, args...), strings.Join(append([]string{tcpdumpPath}, args...), " ")
 }
 
 func (s *Server) latestCaptureSummaries(limit int) []CaptureSummary {
@@ -349,7 +363,7 @@ func (s *Server) startPerfTest(req PerfTestStartRequest) (PerfTestSummary, error
 	}
 	runID := time.Now().Unix()
 	jobID := uuid.NewString()
-	workDir := filepath.Join(settings.AWD, "perf-"+jobID)
+	workDir := filepath.Join(s.root, "SNORT_TEST_WD", "perf-"+jobID)
 	dbPath := filepath.Join(workDir, "snort.sqlite")
 	cfg := wrap.Config{
 		Mode:            req.Mode,
@@ -374,19 +388,31 @@ func (s *Server) startPerfTest(req PerfTestStartRequest) (PerfTestSummary, error
 			return PerfTestSummary{}, fmt.Errorf("pcap_file is required for pcap performance test")
 		}
 	}
-	rawCfg, _ := store.MarshalConfig(map[string]any{"request": req, "wrap": cfg})
+	if err := copyRulesBetweenDBs(settings.SnortDBPath, dbPath, settings.ActiveRunID, runID); err != nil {
+		return PerfTestSummary{}, fmt.Errorf("copy production rules for performance test: %w", err)
+	}
+	rawCfg, _ := store.MarshalConfig(map[string]any{"request": req, "wrap": cfg, "source_db": settings.SnortDBPath})
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	job := store.JobRecord{
 		ID: jobID, Kind: "perf", Status: "running", WorkDir: workDir,
 		ConfigJSON: rawCfg, StartedAt: now, UpdatedAt: now,
 	}
-	if err := s.store.UpsertJob(job); err != nil {
-		return PerfTestSummary{}, err
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.mu.Lock()
+	if len(s.perfCancels) > 0 {
+		s.mu.Unlock()
+		cancel()
+		return PerfTestSummary{}, fmt.Errorf("performance test is already running")
+	}
 	s.perfCancels[jobID] = cancel
 	s.mu.Unlock()
+	if err := s.store.UpsertJob(job); err != nil {
+		s.mu.Lock()
+		delete(s.perfCancels, jobID)
+		s.mu.Unlock()
+		cancel()
+		return PerfTestSummary{}, err
+	}
 	go s.runPerfJob(ctx, job, cfg, req.DurationS)
 	return PerfTestSummary{ID: jobID, Status: "running", StartedAt: now}, nil
 }
@@ -418,6 +444,7 @@ func (s *Server) runPerfJob(ctx context.Context, job store.JobRecord, cfg wrap.C
 		finish("failed", nil, err)
 		return
 	}
+	stats := runner.StartupStats()
 	if cfg.Mode == wrap.ModeInterface && durationS > 0 {
 		timer := time.NewTimer(time.Duration(durationS) * time.Second)
 		select {
@@ -438,14 +465,16 @@ func (s *Server) runPerfJob(ctx context.Context, job store.JobRecord, cfg wrap.C
 	alerts, _ := countTableRun(cfg.SnortDBPath, "alerts", cfg.RunID)
 	rules, _ := countTableRun(cfg.SnortDBPath, "rules", cfg.RunID)
 	finish("completed", &PerfTestResult{
-		RunID:      cfg.RunID,
-		Mode:       cfg.Mode,
-		DurationMS: time.Since(start).Milliseconds(),
-		DBPath:     cfg.SnortDBPath,
-		Profiles:   profiles,
-		RuleTimeUS: ruleTime,
-		AlertCount: alerts,
-		RuleCount:  rules,
+		RunID:           cfg.RunID,
+		Mode:            cfg.Mode,
+		DurationMS:      time.Since(start).Milliseconds(),
+		WorkDir:         cfg.SnortWorkingDir,
+		DBPath:          cfg.SnortDBPath,
+		Profiles:        profiles,
+		RuleTimeUS:      ruleTime,
+		AlertCount:      alerts,
+		RuleCount:       rules,
+		LoadedRuleCount: stats.LoadedRuleCount,
 	}, nil)
 }
 
@@ -543,37 +572,70 @@ func expectedAnalysisRunsFromRequest(req AnalysisStartRequest) int {
 	if maxRound <= 0 {
 		maxRound = atypes.DefaultMaxRound
 	}
-	enabled := 4
-	if len(req.Strategies) > 0 {
-		enabled = 0
-		for _, name := range req.Strategies {
-			if strings.HasPrefix(name, "iter_") {
-				enabled++
-			}
-			if name == "all" {
-				enabled = 4
-			}
-			if name == "none" {
-				enabled = 0
+	selected, err := selectedStrategyNames(req.Strategies, req.DisabledStrategies)
+	if err != nil {
+		return 18
+	}
+	safeEnabled := false
+	iterCount := 0
+	for _, name := range selected {
+		if strings.HasPrefix(name, "safe_") {
+			safeEnabled = true
+		}
+		if strings.HasPrefix(name, "iter_") {
+			iterCount++
+		}
+	}
+	expected := 1 + iterCount*maxRound
+	if safeEnabled {
+		expected++
+	}
+	return expected
+}
+
+func selectedStrategyNames(enabled, disabled []string) ([]string, error) {
+	specs := builtinStrategies()
+	known := map[string]bool{}
+	selected := map[string]bool{}
+	for _, spec := range specs {
+		known[spec.Name] = true
+	}
+	if len(enabled) == 0 {
+		for _, spec := range specs {
+			selected[spec.Name] = true
+		}
+	} else {
+		for _, name := range enabled {
+			switch name {
+			case "all":
+				for _, spec := range specs {
+					selected[spec.Name] = true
+				}
+			case "none":
+				for key := range selected {
+					delete(selected, key)
+				}
+			default:
+				if !known[name] {
+					return nil, fmt.Errorf("unknown strategy %q", name)
+				}
+				selected[name] = true
 			}
 		}
 	}
-	disabled := map[string]bool{}
-	for _, name := range req.DisabledStrategies {
-		disabled[name] = true
+	for _, name := range disabled {
+		if !known[name] {
+			return nil, fmt.Errorf("unknown strategy %q", name)
+		}
+		delete(selected, name)
 	}
-	if len(disabled) > 0 && len(req.Strategies) == 0 {
-		for _, spec := range builtinStrategies() {
-			if strings.HasPrefix(spec.Name, "iter_") && disabled[spec.Name] {
-				enabled--
-			}
+	out := []string{}
+	for _, spec := range specs {
+		if selected[spec.Name] {
+			out = append(out, spec.Name)
 		}
 	}
-	if enabled < 0 {
-		enabled = 0
-	}
-	// baseline + possible SAFE aggregate + ITER rounds.
-	return 2 + enabled*maxRound
+	return out, nil
 }
 
 func choosePath(root, value, fallback string) string {

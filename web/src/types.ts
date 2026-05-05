@@ -24,6 +24,7 @@ export type Settings = {
   need_alert: boolean;
   need_profiler: boolean;
   lua_overrides: LuaOverride[];
+  analysis_disabled_strategies?: string[];
   last_applied_hash: string;
   last_applied_at?: string;
   last_applied_final_run?: number;
@@ -226,11 +227,13 @@ export type PerfTestSummary = {
     run_id: number;
     mode: string;
     duration_ms: number;
+    work_dir: string;
     db_path: string;
     profiles: SystemPoint[];
     rule_time_us: number;
     alert_count: number;
     rule_count: number;
+    loaded_rule_count: number;
   };
 };
 

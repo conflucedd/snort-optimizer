@@ -137,7 +137,7 @@ func (s *Server) handlePcapFiles(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	files := listFiles(settings.PcapDir, []string{".pcap", ".pcapng", ".db"})
+	files := listFilesFromDirs(s.root, []string{"data", "real_pcap", settings.PcapDir}, []string{".pcap", ".pcapng"})
 	writeJSON(w, http.StatusOK, FileListResponse{Files: files})
 }
 
@@ -729,6 +729,24 @@ func mergeIncomingSettings(root string, current, incoming store.AppSettings) sto
 	if incoming.LuaOverrides != nil {
 		out.LuaOverrides = incoming.LuaOverrides
 	}
+	if incoming.AnalysisDisabledStrategies != nil {
+		out.AnalysisDisabledStrategies = cleanStrategyNames(incoming.AnalysisDisabledStrategies)
+	}
+	return out
+}
+
+func cleanStrategyNames(values []string) []string {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, value := range values {
+		name := strings.TrimSpace(value)
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		out = append(out, name)
+	}
+	sort.Strings(out)
 	return out
 }
 
@@ -885,6 +903,51 @@ func listFiles(dir string, exts []string) []FileItem {
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ModTime > out[j].ModTime })
+	return out
+}
+
+func listFilesFromDirs(root string, dirs []string, exts []string) []FileItem {
+	seenDirs := map[string]bool{}
+	seenFiles := map[string]bool{}
+	out := []FileItem{}
+	for _, dir := range dirs {
+		dir = strings.TrimSpace(dir)
+		if dir == "" {
+			continue
+		}
+		scanDir := dir
+		if !filepath.IsAbs(scanDir) {
+			scanDir = filepath.Join(root, scanDir)
+		}
+		scanDir = filepath.Clean(scanDir)
+		if seenDirs[scanDir] {
+			continue
+		}
+		seenDirs[scanDir] = true
+		for _, file := range listFiles(scanDir, exts) {
+			absPath := file.Path
+			if !filepath.IsAbs(absPath) {
+				absPath = filepath.Join(scanDir, file.Name)
+			}
+			absPath = filepath.Clean(absPath)
+			if seenFiles[absPath] {
+				continue
+			}
+			seenFiles[absPath] = true
+			if rel, err := filepath.Rel(root, absPath); err == nil && rel != "." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != ".." {
+				file.Path = filepath.Clean(rel)
+			} else {
+				file.Path = absPath
+			}
+			out = append(out, file)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].ModTime == out[j].ModTime {
+			return out[i].Path < out[j].Path
+		}
+		return out[i].ModTime > out[j].ModTime
+	})
 	return out
 }
 

@@ -25,26 +25,27 @@ type LuaOverride struct {
 }
 
 type AppSettings struct {
-	RootDir             string        `json:"root_dir"`
-	SWD                 string        `json:"swd"`
-	AWD                 string        `json:"awd"`
-	PcapDir             string        `json:"pcap_dir"`
-	SnortConfigPath     string        `json:"snort_config_path"`
-	SnortDBPath         string        `json:"snort_db_path"`
-	RawRulePath         string        `json:"raw_rule_path"`
-	RawSnortSQLite      string        `json:"raw_snort_sqlite"`
-	Interface           string        `json:"interface"`
-	Mode                string        `json:"mode"`
-	PcapFile            string        `json:"pcap_file"`
-	ActiveRunID         int64         `json:"active_run_id"`
-	NeedOutput          bool          `json:"need_output"`
-	NeedAlert           bool          `json:"need_alert"`
-	NeedProfiler        bool          `json:"need_profiler"`
-	LuaOverrides        []LuaOverride `json:"lua_overrides"`
-	LastAppliedHash     string        `json:"last_applied_hash"`
-	LastAppliedAt       string        `json:"last_applied_at,omitempty"`
-	LastAppliedFinalRun int64         `json:"last_applied_final_run,omitempty"`
-	UpdatedAt           string        `json:"updated_at"`
+	RootDir                    string        `json:"root_dir"`
+	SWD                        string        `json:"swd"`
+	AWD                        string        `json:"awd"`
+	PcapDir                    string        `json:"pcap_dir"`
+	SnortConfigPath            string        `json:"snort_config_path"`
+	SnortDBPath                string        `json:"snort_db_path"`
+	RawRulePath                string        `json:"raw_rule_path"`
+	RawSnortSQLite             string        `json:"raw_snort_sqlite"`
+	Interface                  string        `json:"interface"`
+	Mode                       string        `json:"mode"`
+	PcapFile                   string        `json:"pcap_file"`
+	ActiveRunID                int64         `json:"active_run_id"`
+	NeedOutput                 bool          `json:"need_output"`
+	NeedAlert                  bool          `json:"need_alert"`
+	NeedProfiler               bool          `json:"need_profiler"`
+	LuaOverrides               []LuaOverride `json:"lua_overrides"`
+	AnalysisDisabledStrategies []string      `json:"analysis_disabled_strategies,omitempty"`
+	LastAppliedHash            string        `json:"last_applied_hash"`
+	LastAppliedAt              string        `json:"last_applied_at,omitempty"`
+	LastAppliedFinalRun        int64         `json:"last_applied_final_run,omitempty"`
+	UpdatedAt                  string        `json:"updated_at"`
 }
 
 type JobRecord struct {
