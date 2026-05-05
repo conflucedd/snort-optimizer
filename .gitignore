@@ -46,3 +46,5 @@ real_pcap/*
 !SWD/.gitkeep
 !real_pcap/.gitkeep
 server/cmd
+*.tar
+*.zst
