@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -339,12 +340,21 @@ func (r *Runner) clearStopped() {
 
 func resolveSnortEnv() (string, string, error) {
 	snortDir := os.Getenv("SNORT_DIR")
-	if snortDir == "" {
-		return "", "", fmt.Errorf("SNORT_DIR is required")
-	}
 	daqDir := os.Getenv("DAQ_DIR")
+	if snortDir == "" || daqDir == "" {
+		fileEnv := loadDotEnv()
+		if snortDir == "" {
+			snortDir = fileEnv["SNORT_DIR"]
+		}
+		if daqDir == "" {
+			daqDir = fileEnv["DAQ_DIR"]
+		}
+	}
+	if snortDir == "" {
+		return "", "", fmt.Errorf("SNORT_DIR is required; sudo may clear the environment, so run with sudo -E or set SNORT_DIR in .env")
+	}
 	if daqDir == "" {
-		return "", "", fmt.Errorf("DAQ_DIR is required")
+		return "", "", fmt.Errorf("DAQ_DIR is required; sudo may clear the environment, so run with sudo -E or set DAQ_DIR in .env")
 	}
 	snortBin := filepath.Join(snortDir, "snort")
 	stat, err := os.Stat(snortBin)
@@ -362,4 +372,50 @@ func resolveSnortEnv() (string, string, error) {
 		return "", "", fmt.Errorf("DAQ_DIR %s is not a directory", daqDir)
 	}
 	return snortBin, daqDir, nil
+}
+
+func loadDotEnv() map[string]string {
+	if cwd, err := os.Getwd(); err == nil {
+		values := parseEnvFile(filepath.Join(cwd, ".env"))
+		for key, value := range values {
+			values[key] = resolveEnvPath(cwd, value)
+		}
+		return values
+	}
+	return nil
+}
+
+func parseEnvFile(path string) map[string]string {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	out := map[string]string{}
+	for _, line := range strings.Split(string(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		if key != "SNORT_DIR" && key != "DAQ_DIR" {
+			continue
+		}
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		if value != "" {
+			out[key] = value
+		}
+	}
+	return out
+}
+
+func resolveEnvPath(baseDir, value string) string {
+	if value == "" || filepath.IsAbs(value) {
+		return value
+	}
+	return filepath.Clean(filepath.Join(baseDir, value))
 }
