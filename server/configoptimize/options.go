@@ -33,7 +33,7 @@ func Presets() []LuaPreset {
 			ID:          "appid_disable",
 			Category:    "协议识别",
 			Label:       "关闭 AppID",
-			Value:       `appid = { }`,
+			Value:       `appid = nil`,
 			Description: "减少应用识别开销。依赖 AppID 的规则或统计会变少，应用前建议先跑总体性能测试。",
 			Risk:        "high",
 		},
@@ -49,7 +49,7 @@ func Presets() []LuaPreset {
 			ID:          "wizard_disable",
 			Category:    "协议识别",
 			Label:       "关闭 Wizard 探测",
-			Value:       `wizard = { }`,
+			Value:       `wizard = nil`,
 			Description: "关闭部分协议自动探测，减少早期流量分类成本。",
 			Risk:        "medium",
 		},
@@ -97,6 +97,7 @@ func MergePresetMetadata(overrides []store.LuaOverride) []store.LuaOverride {
 	out := make([]store.LuaOverride, 0, len(overrides)+len(meta))
 	for _, override := range overrides {
 		if preset, ok := meta[override.ID]; ok {
+			override.Value = preset.Value
 			if override.Label == "" {
 				override.Label = preset.Label
 			}

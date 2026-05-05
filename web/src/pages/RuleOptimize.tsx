@@ -1,5 +1,5 @@
 import { CheckCircle2, Play, RotateCcw, Save, Search, Square, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, compactBytes, fmtNumber, pct } from "../api";
 import { LineChart } from "../components/LineChart";
 import { StatusPill } from "../components/StatusPill";
@@ -23,6 +23,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const [decisionQuery, setDecisionQuery] = useState("");
   const [decisionSearch, setDecisionSearch] = useState("");
   const [awd, setAwd] = useState(settings?.awd ?? "AWD");
+  const loadSeq = useRef(0);
   const [form, setForm] = useState({
     pcap1: "data/Tuesday.pcap",
     db1: "data/Tuesday.db",
@@ -35,13 +36,17 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   const decisionLimit = 80;
 
   async function load(nextDecisionOffset = decisionOffset, nextDecisionSearch = decisionSearch) {
+    const seq = ++loadSeq.current;
     try {
       const params = new URLSearchParams({
         decision_limit: String(decisionLimit),
         decision_offset: String(nextDecisionOffset)
       });
-      if (nextDecisionSearch.trim()) params.set("decision_q", nextDecisionSearch.trim());
-      setStatus(await api.analysisStatus(params));
+      if (nextDecisionSearch.trim()) params.set("q", nextDecisionSearch.trim());
+      const nextStatus = await api.analysisStatus(params);
+      if (seq === loadSeq.current) {
+        setStatus(nextStatus);
+      }
       setError("");
     } catch (err) {
       setError((err as Error).message);

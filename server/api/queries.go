@@ -318,19 +318,26 @@ FROM trim_decisions WHERE `+where+` ORDER BY committed DESC, run_id DESC, id DES
 }
 
 func trimDecisionWhere(search string) (string, []any) {
-	if strings.TrimSpace(search) == "" {
+	search = strings.TrimSpace(search)
+	if search == "" {
 		return "1=1", nil
 	}
-	like := "%" + strings.TrimSpace(search) + "%"
-	where := `(CAST(run_id AS TEXT) LIKE ? OR CAST(gid AS TEXT) LIKE ? OR CAST(sid AS TEXT) LIKE ?
+	like := "%" + search + "%"
+	where := []string{`(CAST(run_id AS TEXT) LIKE ? OR CAST(gid AS TEXT) LIKE ? OR CAST(sid AS TEXT) LIKE ?
 OR CAST(gid AS TEXT) || ':' || CAST(sid AS TEXT) LIKE ? OR CAST(rev AS TEXT) LIKE ?
 OR source_file LIKE ? OR msg LIKE ? OR reasons LIKE ?
-OR functions LIKE ? OR type LIKE ?)`
+OR functions LIKE ? OR type LIKE ?)`}
 	args := make([]any, 0, 10)
 	for i := 0; i < 10; i++ {
 		args = append(args, like)
 	}
-	return where, args
+	switch strings.ToLower(search) {
+	case "commit", "committed", "提交", "已提交":
+		where = append(where, "committed = 1")
+	case "rollback", "rolledback", "回滚", "已回滚":
+		where = append(where, "committed = 0")
+	}
+	return "(" + strings.Join(where, " OR ") + ")", args
 }
 
 func queryRuleFP(dbPath string, runID int64, limit int) ([]RuleFPView, error) {

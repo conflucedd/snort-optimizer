@@ -45,3 +45,4 @@ real_pcap/*
 !AWD/.gitkeep
 !SWD/.gitkeep
 !real_pcap/.gitkeep
+server/cmd

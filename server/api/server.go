@@ -329,7 +329,11 @@ func (s *Server) handleAnalysisStatus(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	decisionLimit := clampInt(queryInt(q.Get("decision_limit"), 80), 1, 300)
 	decisionOffset := clampInt(queryInt(q.Get("decision_offset"), 0), 0, 1_000_000_000)
-	response, err := s.analysisStatus(decisionLimit, decisionOffset, q.Get("decision_q"))
+	decisionSearch := q.Get("decision_q")
+	if decisionSearch == "" {
+		decisionSearch = q.Get("q")
+	}
+	response, err := s.analysisStatus(decisionLimit, decisionOffset, decisionSearch)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
