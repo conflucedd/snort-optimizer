@@ -184,14 +184,11 @@ export function RuleOptimize({ settings, onSettings }: Props) {
   );
   const throughputPoints = useMemo(
     () =>
-      runs.map((run) => {
-        const totalMS = Math.max(1, run.evaluation.real_runtime_ms);
-        return {
-          label: `run ${run.run_id}`,
-          value: run.evaluation.total_flows / (totalMS / 1000),
-          alt: run.evaluation.real_rule_time_us / 1_000_000
-        };
-      }),
+      runs.map((run) => ({
+        label: `run ${run.run_id}`,
+        value: run.evaluation.real_throughput_pps,
+        alt: run.evaluation.profile_runtime_seconds
+      })),
     [runs]
   );
   const finalRun = status?.result?.final_run_id ?? 0;
@@ -320,11 +317,11 @@ export function RuleOptimize({ settings, onSettings }: Props) {
           </div>
         </div>
         <div className="panel">
-          <div className="panel-title">吞吐 / 规则耗时</div>
-          <LineChart points={throughputPoints} label="throughput" />
+          <div className="panel-title">吞吐 / 耗时</div>
+          <LineChart points={throughputPoints} label="pkts/sec / seconds" />
           <div className="chart-legend">
-            <span className="legend orange" /> Flows/s
-            <span className="legend blue" /> Rule time s
+            <span className="legend orange" /> pkts/sec
+            <span className="legend blue" /> seconds
           </div>
         </div>
       </section>
@@ -339,7 +336,7 @@ export function RuleOptimize({ settings, onSettings }: Props) {
               <div>{run.reason}</div>
               <strong>{pct(run.evaluation.false_positive_rate)}</strong>
               <strong>{pct(run.evaluation.miss_rate)}</strong>
-              <span>{fmtNumber(run.evaluation.real_rule_time_us / 1000, 0)} ms</span>
+              <span>{fmtNumber(run.evaluation.profile_runtime_seconds, 2)} s</span>
             </div>
           ))}
         </div>

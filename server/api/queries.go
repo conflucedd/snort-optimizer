@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"snort-optimizer/analyser/types"
 )
 
 type alertQuery struct {
@@ -232,6 +230,7 @@ func loadAnalysisResult(workDir string, decisionLimit, decisionOffset int, decis
 	if err != nil {
 		return nil, err
 	}
+	enrichAnalyserRunProfilerMetrics(workDir, runs)
 	finalRunID := int64(0)
 	for _, run := range runs {
 		if run.Committed && run.RunID >= finalRunID {
@@ -264,7 +263,7 @@ func loadAnalysisResult(workDir string, decisionLimit, decisionOffset int, decis
 	}, nil
 }
 
-func queryAnalyserRuns(conn *sql.DB) ([]types.RunResult, error) {
+func queryAnalyserRuns(conn *sql.DB) ([]AnalysisRunView, error) {
 	rows, err := conn.Query(`SELECT run_id, committed, rolled_back, factor, COALESCE(reason, ''),
 total_flows, benign_flows, malicious_flows, alerted_flows, false_positive_flows,
 detected_malicious_flows, missed_flows, unmatched_alert_flows, false_positive_rate, miss_rate,
@@ -274,9 +273,9 @@ FROM runs ORDER BY id;`)
 		return nil, err
 	}
 	defer rows.Close()
-	out := []types.RunResult{}
+	out := []AnalysisRunView{}
 	for rows.Next() {
-		var result types.RunResult
+		var result AnalysisRunView
 		var committed, rolledBack int
 		e := &result.Evaluation
 		if err := rows.Scan(&result.RunID, &committed, &rolledBack, &result.Factor, &result.Reason,
@@ -315,6 +314,33 @@ FROM trim_decisions WHERE `+where+` ORDER BY committed DESC, run_id DESC, id DES
 		out = append(out, item)
 	}
 	return out, rows.Err()
+}
+
+func enrichAnalyserRunProfilerMetrics(workDir string, runs []AnalysisRunView) {
+	realDBPath := filepath.Join(workDir, "real", "snort.sqlite")
+	expDBPath := filepath.Join(workDir, "exp", "snort.sqlite")
+	baseDBPath := filepath.Join(workDir, "base", "snort.sqlite")
+	for i := range runs {
+		runID := runs[i].RunID
+		expSeconds := queryProfilerMetricValueFromPath(expDBPath, runID, []string{"seconds"})
+		baseSeconds := queryProfilerMetricValueFromPath(baseDBPath, runID, []string{"seconds"})
+		runs[i].Evaluation.RealThroughputPPS = queryProfilerMetricValueFromPath(realDBPath, runID, []string{"pkts/sec", "packets/sec"})
+		runs[i].Evaluation.ExpSeconds = expSeconds
+		runs[i].Evaluation.BaseSeconds = baseSeconds
+		runs[i].Evaluation.ProfileRuntimeSeconds = expSeconds - baseSeconds
+	}
+}
+
+func queryProfilerMetricValueFromPath(dbPath string, runID int64, metrics []string) float64 {
+	if _, err := os.Stat(dbPath); err != nil {
+		return 0
+	}
+	conn, err := sqlOpen(dbPath)
+	if err != nil {
+		return 0
+	}
+	defer conn.Close()
+	return queryProfilerMetricValue(conn, runID, metrics)
 }
 
 func trimDecisionWhere(search string) (string, []any) {

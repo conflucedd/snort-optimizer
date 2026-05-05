@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -68,5 +69,70 @@ VALUES (0, 1001, 1, 1, 'alert', 'tcp', 'test rule', 'attempted-admin', 1, 'test.
 	}
 	if count != 1 {
 		t.Fatalf("copied %d rules, want 1", count)
+	}
+}
+
+func TestEnrichAnalyserRunProfilerMetricsUsesProfilerMetricSources(t *testing.T) {
+	workDir := t.TempDir()
+	createProfilerMetricsDB(t, filepath.Join(workDir, "real", "snort.sqlite"), 3, map[string]float64{
+		"seconds":   304.5,
+		"pkts/sec":  38446,
+		"Mbits/sec": 196,
+	})
+	createProfilerMetricsDB(t, filepath.Join(workDir, "exp", "snort.sqlite"), 3, map[string]float64{
+		"seconds": 330.450117,
+	})
+	createProfilerMetricsDB(t, filepath.Join(workDir, "base", "snort.sqlite"), 3, map[string]float64{
+		"seconds": 0.026462,
+	})
+
+	runs := []AnalysisRunView{{RunID: 3}}
+	enrichAnalyserRunProfilerMetrics(workDir, runs)
+
+	eval := runs[0].Evaluation
+	if eval.RealThroughputPPS != 38446 {
+		t.Fatalf("RealThroughputPPS = %g, want 38446", eval.RealThroughputPPS)
+	}
+	wantRuntime := 330.450117 - 0.026462
+	if eval.ProfileRuntimeSeconds != wantRuntime {
+		t.Fatalf("ProfileRuntimeSeconds = %.6f, want %.6f", eval.ProfileRuntimeSeconds, wantRuntime)
+	}
+	if eval.ExpSeconds != 330.450117 || eval.BaseSeconds != 0.026462 {
+		t.Fatalf("Exp/Base seconds = %.6f/%.6f", eval.ExpSeconds, eval.BaseSeconds)
+	}
+}
+
+func createProfilerMetricsDB(t *testing.T, path string, runID int64, metrics map[string]float64) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	conn, err := sqlOpen(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	_, err = conn.Exec(`CREATE TABLE profiler_metrics (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+run_id INTEGER NOT NULL DEFAULT 0,
+section TEXT NOT NULL,
+module TEXT NOT NULL,
+metric TEXT NOT NULL,
+value REAL NOT NULL,
+percent REAL,
+unit TEXT,
+raw_line TEXT NOT NULL,
+source_file TEXT,
+created_at TEXT NOT NULL
+);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for metric, value := range metrics {
+		if _, err := conn.Exec(`INSERT INTO profiler_metrics
+(run_id, section, module, metric, value, raw_line, created_at)
+VALUES (?, 'summary', 'timing', ?, ?, '', datetime('now'));`, runID, metric, value); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

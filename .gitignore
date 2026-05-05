@@ -48,3 +48,4 @@ real_pcap/*
 server/cmd
 *.tar
 *.zst
+*.sqlite*

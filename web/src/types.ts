@@ -110,6 +110,10 @@ export type Evaluation = {
   real_rule_time_us: number;
   real_avg_cpu: number;
   real_avg_mem_mb: number;
+  real_throughput_pps: number;
+  exp_seconds: number;
+  base_seconds: number;
+  profile_runtime_seconds: number;
   base_load_ms: number;
   exp_runtime_ms: number;
   real_runtime_ms: number;

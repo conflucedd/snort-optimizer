@@ -1,7 +1,6 @@
 package api
 
 import (
-	"snort-optimizer/analyser/types"
 	"snort-optimizer/server/store"
 	"snort-optimizer/wrap"
 )
@@ -106,13 +105,46 @@ type AnalysisStrategy struct {
 type AnalysisResultView struct {
 	AnalyserDBPath    string             `json:"analyser_db_path"`
 	FinalRunID        int64              `json:"final_run_id"`
-	Runs              []types.RunResult  `json:"runs"`
+	Runs              []AnalysisRunView  `json:"runs"`
 	TrimmedCount      int64              `json:"trimmed_count"`
 	TopDecisionTotal  int64              `json:"top_decision_total"`
 	TopDecisionLimit  int                `json:"top_decision_limit"`
 	TopDecisionOffset int                `json:"top_decision_offset"`
 	TopDecisions      []TrimDecisionView `json:"top_decisions"`
 	RuleFP            []RuleFPView       `json:"rule_fp"`
+}
+
+type AnalysisRunView struct {
+	RunID      int64          `json:"run_id"`
+	Committed  bool           `json:"committed"`
+	RolledBack bool           `json:"rolled_back"`
+	Factor     float64        `json:"factor"`
+	Reason     string         `json:"reason,omitempty"`
+	Evaluation EvaluationView `json:"evaluation"`
+}
+
+type EvaluationView struct {
+	RunID                  int64   `json:"run_id"`
+	TotalFlows             int64   `json:"total_flows"`
+	BenignFlows            int64   `json:"benign_flows"`
+	MaliciousFlows         int64   `json:"malicious_flows"`
+	AlertedFlows           int64   `json:"alerted_flows"`
+	FalsePositiveFlows     int64   `json:"false_positive_flows"`
+	DetectedMaliciousFlows int64   `json:"detected_malicious_flows"`
+	MissedFlows            int64   `json:"missed_flows"`
+	UnmatchedAlertFlows    int64   `json:"unmatched_alert_flows"`
+	FalsePositiveRate      float64 `json:"false_positive_rate"`
+	MissRate               float64 `json:"miss_rate"`
+	RealRuleTimeUS         int64   `json:"real_rule_time_us"`
+	RealAvgCPU             float64 `json:"real_avg_cpu"`
+	RealAvgMemMB           float64 `json:"real_avg_mem_mb"`
+	RealThroughputPPS      float64 `json:"real_throughput_pps"`
+	ExpSeconds             float64 `json:"exp_seconds"`
+	BaseSeconds            float64 `json:"base_seconds"`
+	ProfileRuntimeSeconds  float64 `json:"profile_runtime_seconds"`
+	BaseLoadMS             int64   `json:"base_load_ms"`
+	ExpRuntimeMS           int64   `json:"exp_runtime_ms"`
+	RealRuntimeMS          int64   `json:"real_runtime_ms"`
 }
 
 type TrimDecisionView struct {
