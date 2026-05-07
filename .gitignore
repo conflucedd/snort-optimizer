@@ -49,3 +49,4 @@ server/cmd
 *.tar
 *.zst
 *.sqlite*
+paper/
