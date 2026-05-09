@@ -1,5 +1,0 @@
-用go写程序，现在文件夹下有一个pcap流量文件和对应的csv文件（标记了pcap文件中流的类型），要求实现对pcap和csv的同步切割。注意由于时区问题，capinfos中给出的pcap的Earliest packet time和csv中的第一个Timestamp大概有11小时的时差，请设计自动检测offset的逻辑。输入是csv，pcap和
-
-用go写程序，输入是文件夹下的这个csv。把这个csv用sqlite入库，字段就是csv字段。无需主键等其他的
-
-
