@@ -501,8 +501,7 @@ def generate_fp_miss_trend(data: dict) -> None:
         plot_w, plot_h = panel_w - 86, panel_h - 102
         values_fp = [r["false_positive_rate"] * 100 for r in runs]
         values_miss = [r["miss_rate"] * 100 for r in runs]
-        ymax = max(values_fp + values_miss) * 1.12
-        ymax = max(ymax, 1)
+        ymax = 100.0
         for tick in range(5):
             y = plot_y + plot_h - tick * plot_h / 4
             parts.append(f'<line class="grid" x1="{plot_x}" y1="{y:.1f}" x2="{plot_x + plot_w}" y2="{y:.1f}"/>')
