@@ -42,23 +42,23 @@ STRATEGY_ORDER = [
 ]
 
 PALETTE = {
-    "orange": "#1f4e79",
-    "blue": "#4b5563",
-    "green": "#374151",
-    "red": "#8b1e1e",
-    "gray": "#9ca3af",
+    "orange": "#e69f00",
+    "blue": "#0072b2",
+    "green": "#009e73",
+    "red": "#d55e00",
+    "gray": "#7f7f7f",
     "slate": "#1f2937",
     "light": "#ffffff",
     "border": "#9ca3af",
     "grid": "#e5e7eb",
-    "safe1": "#1f2937",
-    "safe2": "#374151",
-    "safe3": "#4b5563",
-    "safe4": "#6b7280",
-    "iter1": "#1f4e79",
-    "iter2": "#376996",
-    "iter3": "#5b7f95",
-    "iter4": "#8a9aa6",
+    "safe1": "#0072b2",
+    "safe2": "#009e73",
+    "safe3": "#56b4e9",
+    "safe4": "#999999",
+    "iter1": "#e69f00",
+    "iter2": "#d55e00",
+    "iter3": "#cc79a7",
+    "iter4": "#6a3d9a",
 }
 
 
@@ -485,7 +485,7 @@ def generate_fp_miss_trend(data: dict) -> None:
         width,
         height,
         "各轮误报率与漏报率变化趋势",
-        "深蓝线表示误报率，灰线表示漏报率；深红空心点表示该轮被回滚，体现阈值约束机制。",
+        "橙线表示误报率，蓝线表示漏报率；红色空心点表示该轮被回滚，体现阈值约束机制。",
     )
     panel_w, panel_h = 560, 300
     x_start, y_start, x_gap, y_gap = 70, 116, 70, 70
@@ -554,7 +554,7 @@ def generate_rule_time_trend(data: dict) -> None:
         width,
         height,
         "各轮规则匹配耗时变化趋势",
-        "规则总耗时来自 real 实例的 profiler 汇总，单位为秒；深红空心点表示该候选轮次被回滚。",
+        "规则总耗时来自 real 实例的 profiler 汇总，单位为秒；红色空心点表示该候选轮次被回滚。",
     )
     panel_w, panel_h = 560, 300
     x_start, y_start, x_gap, y_gap = 70, 116, 70, 70
@@ -621,7 +621,7 @@ def generate_rule_count_reduction(data: dict) -> None:
         width,
         height,
         "最终规则集启用与裁剪数量",
-        "总规则数保持 47068 条；浅灰部分为最终规则集中被裁剪/禁用的规则。",
+        "总规则数保持 47068 条；橙色部分为最终规则集中被裁剪/禁用的规则。",
     )
     plot_x, plot_y = 210, 120
     plot_w, row_h = 850, 72
@@ -638,14 +638,14 @@ def generate_rule_count_reduction(data: dict) -> None:
         disabled_w = disabled / max_total * plot_w
         parts.append(f'<rect x="{plot_x}" y="{y}" width="{plot_w}" height="34" fill="#ffffff" stroke="{PALETTE["border"]}" stroke-width="1"/>')
         parts.append(f'<rect x="{plot_x}" y="{y}" width="{enabled_w:.1f}" height="34" fill="{PALETTE["green"]}"/>')
-        parts.append(f'<rect x="{plot_x + enabled_w:.1f}" y="{y}" width="{disabled_w:.1f}" height="34" fill="{PALETTE["gray"]}"/>')
+        parts.append(f'<rect x="{plot_x + enabled_w:.1f}" y="{y}" width="{disabled_w:.1f}" height="34" fill="{PALETTE["orange"]}"/>')
         parts.append(f'<text class="value" x="{plot_x + 10}" y="{y + 23}">启用 {num(enabled)}</text>')
         parts.append(f'<text class="value" x="{plot_x + enabled_w + disabled_w - 10:.1f}" y="{y + 23}" text-anchor="end">裁剪 {num(disabled)}</text>')
         parts.append(f'<text class="small" x="{plot_x + plot_w + 18}" y="{y + 22}">裁剪比例 {pct(disabled / total)}</text>')
     legend_y = plot_y + len(DAYS) * row_h + 22
     parts.append(f'<rect x="{plot_x}" y="{legend_y}" width="14" height="14" fill="{PALETTE["green"]}"/>')
     parts.append(f'<text class="small" x="{plot_x + 22}" y="{legend_y + 12}">最终启用规则</text>')
-    parts.append(f'<rect x="{plot_x + 130}" y="{legend_y}" width="14" height="14" fill="{PALETTE["gray"]}"/>')
+    parts.append(f'<rect x="{plot_x + 130}" y="{legend_y}" width="14" height="14" fill="{PALETTE["orange"]}"/>')
     parts.append(f'<text class="small" x="{plot_x + 152}" y="{legend_y + 12}">最终裁剪规则</text>')
     svg_end(parts, path / "chart.svg")
 
@@ -700,7 +700,7 @@ def generate_strategy_contribution(data: dict) -> None:
             w = count / max_total * plot_w
             parts.append(f'<rect x="{x:.1f}" y="{y}" width="{w:.1f}" height="36" fill="{strategy_colors[strategy]}"/>')
             if w > 44:
-                parts.append(f'<text class="small" x="{x + w / 2:.1f}" y="{y + 24}" text-anchor="middle" fill="#ffffff">{num(count)}</text>')
+                parts.append(f'<text class="small" x="{x + w / 2:.1f}" y="{y + 24}" text-anchor="middle" style="fill:#ffffff">{num(count)}</text>')
             x += w
         parts.append(f'<text class="small" x="{plot_x + plot_w + 20}" y="{y + 24}">合计 {num(total)}</text>')
     lx, ly = plot_x, plot_y + len(DAYS) * row_h + 30
@@ -737,7 +737,7 @@ def generate_commit_rollback_timeline(data: dict) -> None:
         width,
         height,
         "各数据集提交与回滚轮次",
-        "深灰实心点为提交轮次，深红空心点为回滚轮次。回滚通常来自漏报率增量超过阈值，随后 factor 减小。",
+        "绿色实心点为提交轮次，红色空心点为回滚轮次。回滚通常来自漏报率增量超过阈值，随后 factor 减小。",
     )
     x0, y0 = 130, 136
     plot_w, row_h = 1010, 86

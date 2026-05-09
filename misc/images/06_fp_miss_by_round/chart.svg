@@ -15,7 +15,7 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 </defs>
 <rect x="0" y="0" width="1280" height="860" fill="#ffffff"/>
 <text class="title" x="40" y="42">各轮误报率与漏报率变化趋势</text>
-<text class="subtitle" x="40" y="68">深蓝线表示误报率，灰线表示漏报率；深红空心点表示该轮被回滚，体现阈值约束机制。</text>
+<text class="subtitle" x="40" y="68">橙线表示误报率，蓝线表示漏报率；红色空心点表示该轮被回滚，体现阈值约束机制。</text>
 <rect x="70" y="116" width="560" height="300" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
 <text class="panel-title" x="88" y="146">周二实验流量</text>
 <line class="grid" x1="126" y1="370.0" x2="600" y2="370.0"/>
@@ -29,23 +29,23 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 <line class="grid" x1="126" y1="172.0" x2="600" y2="172.0"/>
 <text class="small" x="118" y="176.0" text-anchor="end">41.8%</text>
 <line class="axis" x1="126" y1="370" x2="600" y2="370"/>
-<polyline points="126.0,325.2 155.6,325.3 185.2,325.3 214.9,325.1 244.5,325.2 274.1,367.6 303.8,368.8 333.4,369.1 363.0,369.2 392.6,369.2 422.2,369.2 451.9,369.2 481.5,369.2 511.1,369.9 540.8,369.9 570.4,369.2 600.0,369.9" fill="none" stroke="#1f4e79" stroke-width="2.5"/>
-<polyline points="126.0,368.6 155.6,368.6 185.2,368.6 214.9,368.6 244.5,368.6 274.1,368.6 303.8,368.6 333.4,368.6 363.0,368.6 392.6,368.6 422.2,368.6 451.9,368.6 481.5,368.6 511.1,193.2 540.8,193.2 570.4,368.6 600.0,193.2" fill="none" stroke="#4b5563" stroke-width="2.5"/>
-<circle cx="511.1" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="511.1" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="540.8" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="540.8" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="600.0" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="600.0" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
+<polyline points="126.0,325.2 155.6,325.3 185.2,325.3 214.9,325.1 244.5,325.2 274.1,367.6 303.8,368.8 333.4,369.1 363.0,369.2 392.6,369.2 422.2,369.2 451.9,369.2 481.5,369.2 511.1,369.9 540.8,369.9 570.4,369.2 600.0,369.9" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<polyline points="126.0,368.6 155.6,368.6 185.2,368.6 214.9,368.6 244.5,368.6 274.1,368.6 303.8,368.6 333.4,368.6 363.0,368.6 392.6,368.6 422.2,368.6 451.9,368.6 481.5,368.6 511.1,193.2 540.8,193.2 570.4,368.6 600.0,193.2" fill="none" stroke="#0072b2" stroke-width="2.5"/>
+<circle cx="511.1" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="511.1" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="540.8" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="540.8" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="600.0" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="600.0" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
 <text class="small" x="126.0" y="392.0" text-anchor="middle">0</text>
 <text class="small" x="244.5" y="392.0" text-anchor="middle">4</text>
 <text class="small" x="363.0" y="392.0" text-anchor="middle">8</text>
 <text class="small" x="481.5" y="392.0" text-anchor="middle">12</text>
 <text class="small" x="600.0" y="392.0" text-anchor="middle">16</text>
 <text class="small" x="363.0" y="412.0" text-anchor="middle">run_id</text>
-<rect x="460" y="134" width="12" height="12" fill="#1f4e79"/>
+<rect x="460" y="134" width="12" height="12" fill="#e69f00"/>
 <text class="small" x="478" y="145">误报率</text>
-<rect x="534" y="134" width="12" height="12" fill="#4b5563"/>
+<rect x="534" y="134" width="12" height="12" fill="#0072b2"/>
 <text class="small" x="552" y="145">漏报率</text>
 <rect x="700" y="116" width="560" height="300" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
 <text class="panel-title" x="718" y="146">周三实验流量</text>
@@ -60,25 +60,25 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 <line class="grid" x1="756" y1="172.0" x2="1230" y2="172.0"/>
 <text class="small" x="748" y="176.0" text-anchor="end">67.7%</text>
 <line class="axis" x1="756" y1="370" x2="1230" y2="370"/>
-<polyline points="756.0,350.8 785.6,350.9 815.2,350.8 844.9,350.9 874.5,350.9 904.1,369.4 933.8,369.8 963.4,369.9 993.0,369.9 1022.6,369.9 1052.2,369.9 1081.9,369.9 1111.5,369.9 1141.1,369.9 1170.8,369.9 1200.4,369.9 1230.0,369.9" fill="none" stroke="#1f4e79" stroke-width="2.5"/>
-<polyline points="756.0,303.6 785.6,303.6 815.2,303.6 844.9,303.6 874.5,303.6 904.1,303.6 933.8,303.6 963.4,303.6 993.0,303.6 1022.6,303.6 1052.2,303.6 1081.9,303.6 1111.5,303.6 1141.1,193.2 1170.8,193.2 1200.4,193.2 1230.0,193.2" fill="none" stroke="#4b5563" stroke-width="2.5"/>
-<circle cx="1141.1" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1141.1" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1170.8" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1170.8" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1200.4" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1200.4" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1230.0" cy="369.9" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
-<circle cx="1230.0" cy="193.2" r="5" fill="#fff" stroke="#8b1e1e" stroke-width="2"/>
+<polyline points="756.0,350.8 785.6,350.9 815.2,350.8 844.9,350.9 874.5,350.9 904.1,369.4 933.8,369.8 963.4,369.9 993.0,369.9 1022.6,369.9 1052.2,369.9 1081.9,369.9 1111.5,369.9 1141.1,369.9 1170.8,369.9 1200.4,369.9 1230.0,369.9" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<polyline points="756.0,303.6 785.6,303.6 815.2,303.6 844.9,303.6 874.5,303.6 904.1,303.6 933.8,303.6 963.4,303.6 993.0,303.6 1022.6,303.6 1052.2,303.6 1081.9,303.6 1111.5,303.6 1141.1,193.2 1170.8,193.2 1200.4,193.2 1230.0,193.2" fill="none" stroke="#0072b2" stroke-width="2.5"/>
+<circle cx="1141.1" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1141.1" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1170.8" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1170.8" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1200.4" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1200.4" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1230.0" cy="369.9" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
+<circle cx="1230.0" cy="193.2" r="5" fill="#fff" stroke="#d55e00" stroke-width="2"/>
 <text class="small" x="756.0" y="392.0" text-anchor="middle">0</text>
 <text class="small" x="874.5" y="392.0" text-anchor="middle">4</text>
 <text class="small" x="993.0" y="392.0" text-anchor="middle">8</text>
 <text class="small" x="1111.5" y="392.0" text-anchor="middle">12</text>
 <text class="small" x="1230.0" y="392.0" text-anchor="middle">16</text>
 <text class="small" x="993.0" y="412.0" text-anchor="middle">run_id</text>
-<rect x="1090" y="134" width="12" height="12" fill="#1f4e79"/>
+<rect x="1090" y="134" width="12" height="12" fill="#e69f00"/>
 <text class="small" x="1108" y="145">误报率</text>
-<rect x="1164" y="134" width="12" height="12" fill="#4b5563"/>
+<rect x="1164" y="134" width="12" height="12" fill="#0072b2"/>
 <text class="small" x="1182" y="145">漏报率</text>
 <rect x="70" y="486" width="560" height="300" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
 <text class="panel-title" x="88" y="516">周四实验流量</text>
@@ -93,17 +93,17 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 <line class="grid" x1="126" y1="542.0" x2="600" y2="542.0"/>
 <text class="small" x="118" y="546.0" text-anchor="end">111.7%</text>
 <line class="axis" x1="126" y1="740" x2="600" y2="740"/>
-<polyline points="126.0,725.2 155.6,725.2 185.2,725.2 214.9,725.2 244.5,725.3 274.1,738.8 303.8,738.9 333.4,739.0 363.0,739.0 392.6,739.0 422.2,739.0 451.9,739.0 481.5,739.0 511.1,739.8 540.8,739.8 570.4,740.0 600.0,740.0" fill="none" stroke="#1f4e79" stroke-width="2.5"/>
-<polyline points="126.0,565.1 155.6,564.7 185.2,564.7 214.9,564.7 244.5,564.7 274.1,564.7 303.8,564.7 333.4,564.7 363.0,564.7 392.6,564.7 422.2,564.7 451.9,564.7 481.5,564.7 511.1,564.0 540.8,563.9 570.4,563.2 600.0,563.2" fill="none" stroke="#4b5563" stroke-width="2.5"/>
+<polyline points="126.0,725.2 155.6,725.2 185.2,725.2 214.9,725.2 244.5,725.3 274.1,738.8 303.8,738.9 333.4,739.0 363.0,739.0 392.6,739.0 422.2,739.0 451.9,739.0 481.5,739.0 511.1,739.8 540.8,739.8 570.4,740.0 600.0,740.0" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<polyline points="126.0,565.1 155.6,564.7 185.2,564.7 214.9,564.7 244.5,564.7 274.1,564.7 303.8,564.7 333.4,564.7 363.0,564.7 392.6,564.7 422.2,564.7 451.9,564.7 481.5,564.7 511.1,564.0 540.8,563.9 570.4,563.2 600.0,563.2" fill="none" stroke="#0072b2" stroke-width="2.5"/>
 <text class="small" x="126.0" y="762.0" text-anchor="middle">0</text>
 <text class="small" x="244.5" y="762.0" text-anchor="middle">4</text>
 <text class="small" x="363.0" y="762.0" text-anchor="middle">8</text>
 <text class="small" x="481.5" y="762.0" text-anchor="middle">12</text>
 <text class="small" x="600.0" y="762.0" text-anchor="middle">16</text>
 <text class="small" x="363.0" y="782.0" text-anchor="middle">run_id</text>
-<rect x="460" y="504" width="12" height="12" fill="#1f4e79"/>
+<rect x="460" y="504" width="12" height="12" fill="#e69f00"/>
 <text class="small" x="478" y="515">误报率</text>
-<rect x="534" y="504" width="12" height="12" fill="#4b5563"/>
+<rect x="534" y="504" width="12" height="12" fill="#0072b2"/>
 <text class="small" x="552" y="515">漏报率</text>
 <rect x="700" y="486" width="560" height="300" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
 <text class="panel-title" x="718" y="516">周五实验流量</text>
@@ -118,16 +118,16 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 <line class="grid" x1="756" y1="542.0" x2="1230" y2="542.0"/>
 <text class="small" x="748" y="546.0" text-anchor="end">112.0%</text>
 <line class="axis" x1="756" y1="740" x2="1230" y2="740"/>
-<polyline points="756.0,729.1 785.6,729.1 815.2,729.1 844.9,729.1 874.5,729.1 904.1,739.7 933.8,739.8 963.4,739.8 993.0,739.9 1022.6,739.9 1052.2,739.9 1081.9,739.9 1111.5,739.9 1141.1,739.9 1170.8,739.9 1200.4,740.0 1230.0,740.0" fill="none" stroke="#1f4e79" stroke-width="2.5"/>
-<polyline points="756.0,563.9 785.6,563.7 815.2,563.7 844.9,563.7 874.5,563.7 904.1,563.7 933.8,563.7 963.4,563.7 993.0,563.7 1022.6,563.7 1052.2,563.7 1081.9,563.7 1111.5,563.7 1141.1,563.2 1170.8,563.2 1200.4,563.2 1230.0,563.2" fill="none" stroke="#4b5563" stroke-width="2.5"/>
+<polyline points="756.0,729.1 785.6,729.1 815.2,729.1 844.9,729.1 874.5,729.1 904.1,739.7 933.8,739.8 963.4,739.8 993.0,739.9 1022.6,739.9 1052.2,739.9 1081.9,739.9 1111.5,739.9 1141.1,739.9 1170.8,739.9 1200.4,740.0 1230.0,740.0" fill="none" stroke="#e69f00" stroke-width="2.5"/>
+<polyline points="756.0,563.9 785.6,563.7 815.2,563.7 844.9,563.7 874.5,563.7 904.1,563.7 933.8,563.7 963.4,563.7 993.0,563.7 1022.6,563.7 1052.2,563.7 1081.9,563.7 1111.5,563.7 1141.1,563.2 1170.8,563.2 1200.4,563.2 1230.0,563.2" fill="none" stroke="#0072b2" stroke-width="2.5"/>
 <text class="small" x="756.0" y="762.0" text-anchor="middle">0</text>
 <text class="small" x="874.5" y="762.0" text-anchor="middle">4</text>
 <text class="small" x="993.0" y="762.0" text-anchor="middle">8</text>
 <text class="small" x="1111.5" y="762.0" text-anchor="middle">12</text>
 <text class="small" x="1230.0" y="762.0" text-anchor="middle">16</text>
 <text class="small" x="993.0" y="782.0" text-anchor="middle">run_id</text>
-<rect x="1090" y="504" width="12" height="12" fill="#1f4e79"/>
+<rect x="1090" y="504" width="12" height="12" fill="#e69f00"/>
 <text class="small" x="1108" y="515">误报率</text>
-<rect x="1164" y="504" width="12" height="12" fill="#4b5563"/>
+<rect x="1164" y="504" width="12" height="12" fill="#0072b2"/>
 <text class="small" x="1182" y="515">漏报率</text>
 </svg>
