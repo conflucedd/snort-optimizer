@@ -1,0 +1,23 @@
+# 核心数据表关系图
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "primaryBorderColor": "#111827", "primaryTextColor": "#111827", "lineColor": "#374151", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "fontFamily": "Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif"}}}%%
+flowchart LR
+    runs[(runs<br/>每轮运行结果<br/>提交/回滚、误报率、漏报率、耗时)]
+    decisions[(trim_decisions<br/>裁剪决策<br/>规则、策略、原因、指标)]
+    rules[(rules<br/>规则版本表<br/>run_id + gid + sid)]
+    alerts[(alerts<br/>告警记录<br/>五元组、时间、规则 ID)]
+    profiler[(rule_profiler_metrics<br/>规则性能画像<br/>checks、time_us、rule_time_pct)]
+    system[(system_profiles<br/>CPU、内存、FP/FN 汇总)]
+    rulefp[(rule_FP<br/>规则级误报与利用率)]
+
+    rules -- run_id/gid/sid --> decisions
+    runs -- run_id --> decisions
+    runs -- run_id --> rules
+    rules -- gid/sid/rev --> alerts
+    rules -- gid/sid/rev --> profiler
+    alerts -- 五元组与时间窗口匹配 --> rulefp
+    runs -- run_id --> system
+    rulefp -- fp_rate/utilization --> decisions
+    profiler -- time_us/checks --> decisions
+```

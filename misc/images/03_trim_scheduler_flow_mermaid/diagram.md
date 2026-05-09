@@ -1,0 +1,23 @@
+# 规则裁剪提交与回滚流程图
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "primaryBorderColor": "#111827", "primaryTextColor": "#111827", "lineColor": "#374151", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "fontFamily": "Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif"}}}%%
+flowchart TD
+    start([开始分析]) --> baseline[运行 baseline<br/>生成 run 0]
+    baseline --> safe[执行全部 SAFE 策略<br/>静态/低风险裁剪]
+    safe --> safeCommit[直接提交 SAFE run]
+    safeCommit --> iterStart{还有 ITER 策略?}
+    iterStart -- 否 --> final[输出最终 committed run]
+    iterStart -- 是 --> choose[选择下一个 ITER 策略]
+    choose --> round{达到 MaxRound?}
+    round -- 是 --> iterStart
+    round -- 否 --> clone[从当前 accepted run 克隆规则]
+    clone --> trim[禁用候选规则<br/>生成 candidate run]
+    trim --> run[运行 exp / real / base 三实例]
+    run --> eval[计算误报率、漏报率和性能指标]
+    eval --> judge{误报率增量和漏报率增量<br/>是否均未超过阈值?}
+    judge -- 是 --> commit[提交 candidate run<br/>更新 accepted run]
+    judge -- 否 --> rollback[回滚 candidate run<br/>factor 减半]
+    commit --> round
+    rollback --> round
+```

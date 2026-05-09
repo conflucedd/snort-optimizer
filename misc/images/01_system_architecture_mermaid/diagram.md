@@ -1,0 +1,23 @@
+# 系统总体架构图
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "primaryBorderColor": "#111827", "primaryTextColor": "#111827", "lineColor": "#374151", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "fontFamily": "Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif"}}}%%
+flowchart LR
+    user[论文读者/运维用户] --> web[React 前端<br/>概览、规则优化、告警、配置、系统优化]
+    web --> api[Go 后端 REST API<br/>server/api]
+    api --> jobs[任务管理<br/>分析任务、性能测试、抓包任务]
+    api --> store[(SQLite 配置库<br/>settings/jobs)]
+    jobs --> analyser[规则裁剪分析器<br/>analyser]
+    analyser --> scheduler[调度器<br/>baseline / SAFE / ITER]
+    scheduler --> strategies[可插拔裁剪策略<br/>safe 与 iter]
+    scheduler --> wrap[Snort 运行封装<br/>wrap]
+    api --> wrap
+    wrap --> snort[Snort 3<br/>PCAP/网卡检测]
+    snort --> outputs[alert_json / profiler / stdout]
+    outputs --> sql[解析与入库<br/>sql 模块]
+    sql --> snortdb[(snort.sqlite<br/>rules/alerts/profiler/system_profiles)]
+    analyser --> analyserdb[(analyser.db<br/>runs/trim_decisions)]
+    analyser --> snortdb
+    api --> snortdb
+    api --> analyserdb
+```

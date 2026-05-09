@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620">
+<defs>
+<style>
+text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', 'SimHei', 'WenQuanYi Micro Hei', sans-serif; fill: #111827; }
+.title { font-size: 22px; font-weight: 700; }
+.subtitle { font-size: 13px; fill: #4b5563; }
+.axis { stroke: #6b7280; stroke-width: 1; }
+.grid { stroke: #e5e7eb; stroke-width: 1; }
+.label { font-size: 12px; fill: #374151; }
+.small { font-size: 11px; fill: #4b5563; }
+.value { font-size: 12px; font-weight: 600; }
+.panel-title { font-size: 15px; font-weight: 700; }
+.note { font-size: 12px; fill: #4b5563; }
+</style>
+</defs>
+<rect x="0" y="0" width="1280" height="620" fill="#ffffff"/>
+<text class="title" x="40" y="42">各数据集提交与回滚轮次</text>
+<text class="subtitle" x="40" y="68">深灰实心点为提交轮次，深红空心点为回滚轮次。回滚通常来自漏报率增量超过阈值，随后 factor 减小。</text>
+<line class="grid" x1="130.0" y1="116" x2="130.0" y2="422"/>
+<text class="small" x="130.0" y="102" text-anchor="middle">0</text>
+<line class="grid" x1="193.1" y1="116" x2="193.1" y2="422"/>
+<text class="small" x="193.1" y="102" text-anchor="middle">1</text>
+<line class="grid" x1="256.2" y1="116" x2="256.2" y2="422"/>
+<text class="small" x="256.2" y="102" text-anchor="middle">2</text>
+<line class="grid" x1="319.4" y1="116" x2="319.4" y2="422"/>
+<text class="small" x="319.4" y="102" text-anchor="middle">3</text>
+<line class="grid" x1="382.5" y1="116" x2="382.5" y2="422"/>
+<text class="small" x="382.5" y="102" text-anchor="middle">4</text>
+<line class="grid" x1="445.6" y1="116" x2="445.6" y2="422"/>
+<text class="small" x="445.6" y="102" text-anchor="middle">5</text>
+<line class="grid" x1="508.8" y1="116" x2="508.8" y2="422"/>
+<text class="small" x="508.8" y="102" text-anchor="middle">6</text>
+<line class="grid" x1="571.9" y1="116" x2="571.9" y2="422"/>
+<text class="small" x="571.9" y="102" text-anchor="middle">7</text>
+<line class="grid" x1="635.0" y1="116" x2="635.0" y2="422"/>
+<text class="small" x="635.0" y="102" text-anchor="middle">8</text>
+<line class="grid" x1="698.1" y1="116" x2="698.1" y2="422"/>
+<text class="small" x="698.1" y="102" text-anchor="middle">9</text>
+<line class="grid" x1="761.2" y1="116" x2="761.2" y2="422"/>
+<text class="small" x="761.2" y="102" text-anchor="middle">10</text>
+<line class="grid" x1="824.4" y1="116" x2="824.4" y2="422"/>
+<text class="small" x="824.4" y="102" text-anchor="middle">11</text>
+<line class="grid" x1="887.5" y1="116" x2="887.5" y2="422"/>
+<text class="small" x="887.5" y="102" text-anchor="middle">12</text>
+<line class="grid" x1="950.6" y1="116" x2="950.6" y2="422"/>
+<text class="small" x="950.6" y="102" text-anchor="middle">13</text>
+<line class="grid" x1="1013.8" y1="116" x2="1013.8" y2="422"/>
+<text class="small" x="1013.8" y="102" text-anchor="middle">14</text>
+<line class="grid" x1="1076.9" y1="116" x2="1076.9" y2="422"/>
+<text class="small" x="1076.9" y="102" text-anchor="middle">15</text>
+<line class="grid" x1="1140.0" y1="116" x2="1140.0" y2="422"/>
+<text class="small" x="1140.0" y="102" text-anchor="middle">16</text>
+<text class="label" x="112" y="141" text-anchor="end">周二实验流量</text>
+<line class="axis" x1="130" y1="136" x2="1140" y2="136"/>
+<circle cx="130.0" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="193.1" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="256.2" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="319.4" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="382.5" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="445.6" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="508.8" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="571.9" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="635.0" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="698.1" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="761.2" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="824.4" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="887.5" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="950.6" cy="136.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="950.6" y="164.0" text-anchor="middle">0.8</text>
+<circle cx="1013.8" cy="136.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="1013.8" y="164.0" text-anchor="middle">0.4</text>
+<circle cx="1076.9" cy="136.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1140.0" cy="136.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="1140.0" y="164.0" text-anchor="middle">0.2</text>
+<text class="label" x="112" y="227" text-anchor="end">周三实验流量</text>
+<line class="axis" x1="130" y1="222" x2="1140" y2="222"/>
+<circle cx="130.0" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="193.1" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="256.2" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="319.4" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="382.5" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="445.6" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="508.8" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="571.9" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="635.0" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="698.1" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="761.2" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="824.4" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="887.5" cy="222.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="950.6" cy="222.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="950.6" y="250.0" text-anchor="middle">0.8</text>
+<circle cx="1013.8" cy="222.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="1013.8" y="250.0" text-anchor="middle">0.4</text>
+<circle cx="1076.9" cy="222.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="1076.9" y="250.0" text-anchor="middle">0.2</text>
+<circle cx="1140.0" cy="222.0" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="1140.0" y="250.0" text-anchor="middle">0.1</text>
+<text class="label" x="112" y="313" text-anchor="end">周四实验流量</text>
+<line class="axis" x1="130" y1="308" x2="1140" y2="308"/>
+<circle cx="130.0" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="193.1" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="256.2" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="319.4" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="382.5" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="445.6" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="508.8" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="571.9" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="635.0" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="698.1" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="761.2" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="824.4" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="887.5" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="950.6" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1013.8" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1076.9" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1140.0" cy="308.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<text class="label" x="112" y="399" text-anchor="end">周五实验流量</text>
+<line class="axis" x1="130" y1="394" x2="1140" y2="394"/>
+<circle cx="130.0" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="193.1" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="256.2" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="319.4" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="382.5" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="445.6" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="508.8" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="571.9" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="635.0" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="698.1" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="761.2" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="824.4" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="887.5" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="950.6" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1013.8" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1076.9" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="1140.0" cy="394.0" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<circle cx="130" cy="494" r="8" fill="#374151" stroke="#374151" stroke-width="2"/>
+<text class="small" x="148" y="499">提交</text>
+<circle cx="208" cy="494" r="9" fill="#fff" stroke="#8b1e1e" stroke-width="2.5"/>
+<text class="small" x="228" y="499">回滚，点下方为 factor</text>
+</svg>
