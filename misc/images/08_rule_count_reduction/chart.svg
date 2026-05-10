@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620">
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="350" viewBox="0 0 1120 350">
 <defs>
 <style>
 text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', 'SimHei', 'WenQuanYi Micro Hei', sans-serif; fill: #111827; }
-.title { font-size: 22px; font-weight: 700; }
-.subtitle { font-size: 13px; fill: #4b5563; }
 .axis { stroke: #6b7280; stroke-width: 1; }
 .grid { stroke: #e5e7eb; stroke-width: 1; }
 .label { font-size: 12px; fill: #374151; }
@@ -13,39 +11,37 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 .note { font-size: 12px; fill: #4b5563; }
 </style>
 </defs>
-<rect x="0" y="0" width="1180" height="620" fill="#ffffff"/>
-<text class="title" x="40" y="42">最终规则集启用与裁剪数量</text>
-<text class="subtitle" x="40" y="68">总规则数保持 47068 条；橙色部分为最终规则集中被裁剪/禁用的规则。</text>
-<text class="label" x="192" y="148" text-anchor="end">周二实验流量</text>
-<rect x="210" y="120" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
-<rect x="210" y="120" width="519.5" height="34" fill="#009e73"/>
-<rect x="729.5" y="120" width="330.5" height="34" fill="#e69f00"/>
-<text class="value" x="220" y="143">启用 28,766</text>
-<text class="value" x="1050.0" y="143" text-anchor="end">裁剪 18,302</text>
-<text class="small" x="1078" y="142">裁剪比例 38.88%</text>
-<text class="label" x="192" y="220" text-anchor="end">周三实验流量</text>
-<rect x="210" y="192" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
-<rect x="210" y="192" width="520.4" height="34" fill="#009e73"/>
-<rect x="730.4" y="192" width="329.6" height="34" fill="#e69f00"/>
-<text class="value" x="220" y="215">启用 28,819</text>
-<text class="value" x="1050.0" y="215" text-anchor="end">裁剪 18,249</text>
-<text class="small" x="1078" y="214">裁剪比例 38.77%</text>
-<text class="label" x="192" y="292" text-anchor="end">周四实验流量</text>
-<rect x="210" y="264" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
-<rect x="210" y="264" width="507.2" height="34" fill="#009e73"/>
-<rect x="717.2" y="264" width="342.8" height="34" fill="#e69f00"/>
-<text class="value" x="220" y="287">启用 28,088</text>
-<text class="value" x="1050.0" y="287" text-anchor="end">裁剪 18,980</text>
-<text class="small" x="1078" y="286">裁剪比例 40.32%</text>
-<text class="label" x="192" y="364" text-anchor="end">周五实验流量</text>
-<rect x="210" y="336" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
-<rect x="210" y="336" width="507.2" height="34" fill="#009e73"/>
-<rect x="717.2" y="336" width="342.8" height="34" fill="#e69f00"/>
-<text class="value" x="220" y="359">启用 28,085</text>
-<text class="value" x="1050.0" y="359" text-anchor="end">裁剪 18,983</text>
-<text class="small" x="1078" y="358">裁剪比例 40.33%</text>
-<rect x="210" y="430" width="14" height="14" fill="#009e73"/>
-<text class="small" x="232" y="442">最终启用规则</text>
-<rect x="340" y="430" width="14" height="14" fill="#e69f00"/>
-<text class="small" x="362" y="442">最终裁剪规则</text>
+<rect x="0" y="0" width="1120" height="350" fill="#ffffff"/>
+<text class="label" x="114" y="58" text-anchor="end">周二实验流量</text>
+<rect x="132" y="30" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+<rect x="132" y="30" width="519.5" height="34" fill="#009e73"/>
+<rect x="651.5" y="30" width="330.5" height="34" fill="#e69f00"/>
+<text class="value" x="142" y="53">启用 28,766</text>
+<text class="value" x="972.0" y="53" text-anchor="end">裁剪 18,302</text>
+<text class="small" x="1000" y="52">裁剪比例 38.88%</text>
+<text class="label" x="114" y="122" text-anchor="end">周三实验流量</text>
+<rect x="132" y="94" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+<rect x="132" y="94" width="520.4" height="34" fill="#009e73"/>
+<rect x="652.4" y="94" width="329.6" height="34" fill="#e69f00"/>
+<text class="value" x="142" y="117">启用 28,819</text>
+<text class="value" x="972.0" y="117" text-anchor="end">裁剪 18,249</text>
+<text class="small" x="1000" y="116">裁剪比例 38.77%</text>
+<text class="label" x="114" y="186" text-anchor="end">周四实验流量</text>
+<rect x="132" y="158" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+<rect x="132" y="158" width="507.2" height="34" fill="#009e73"/>
+<rect x="639.2" y="158" width="342.8" height="34" fill="#e69f00"/>
+<text class="value" x="142" y="181">启用 28,088</text>
+<text class="value" x="972.0" y="181" text-anchor="end">裁剪 18,980</text>
+<text class="small" x="1000" y="180">裁剪比例 40.32%</text>
+<text class="label" x="114" y="250" text-anchor="end">周五实验流量</text>
+<rect x="132" y="222" width="850" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+<rect x="132" y="222" width="507.2" height="34" fill="#009e73"/>
+<rect x="639.2" y="222" width="342.8" height="34" fill="#e69f00"/>
+<text class="value" x="142" y="245">启用 28,085</text>
+<text class="value" x="972.0" y="245" text-anchor="end">裁剪 18,983</text>
+<text class="small" x="1000" y="244">裁剪比例 40.33%</text>
+<rect x="132" y="308" width="14" height="14" fill="#009e73"/>
+<text class="small" x="154" y="320">最终启用规则</text>
+<rect x="262" y="308" width="14" height="14" fill="#e69f00"/>
+<text class="small" x="284" y="320">最终裁剪规则</text>
 </svg>

@@ -109,14 +109,12 @@ def ensure_dir(name: str) -> Path:
     return path
 
 
-def svg_doc(width: int, height: int, title: str, subtitle: str = "") -> list[str]:
+def svg_doc(width: int, height: int) -> list[str]:
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         "<defs>",
         "<style>",
         "text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', 'SimHei', 'WenQuanYi Micro Hei', sans-serif; fill: #111827; }",
-        ".title { font-size: 22px; font-weight: 700; }",
-        ".subtitle { font-size: 13px; fill: #4b5563; }",
         ".axis { stroke: #6b7280; stroke-width: 1; }",
         ".grid { stroke: #e5e7eb; stroke-width: 1; }",
         ".label { font-size: 12px; fill: #374151; }",
@@ -127,11 +125,7 @@ def svg_doc(width: int, height: int, title: str, subtitle: str = "") -> list[str
         "</style>",
         "</defs>",
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="#ffffff"/>',
-        f'<text class="title" x="40" y="42">{esc(title)}</text>',
     ]
-    if subtitle:
-        for i, part in enumerate(textwrap.wrap(subtitle, width=92)):
-            parts.append(f'<text class="subtitle" x="40" y="{68 + i * 18}">{esc(part)}</text>')
     return parts
 
 
@@ -561,22 +555,17 @@ flowchart LR
 
 def generate_cross_dataset_summary(data: dict) -> None:
     path = ensure_dir("05_cross_dataset_summary")
-    width, height = 1280, 860
-    parts = svg_doc(
-        width,
-        height,
-        "跨数据集优化前后核心指标对比",
-        "Monday 作为真实/基准流量，Tuesday-Friday 作为实验流量；每组左侧为 baseline run 0，右侧为最终 committed run。",
-    )
+    width, height = 1220, 692
+    parts = svg_doc(width, height)
     panels = [
         ("启用规则数量", lambda d: (d["rules_by_run"][0]["enabled_rules"], d["rules_by_run"][d["final_run_id"]]["enabled_rules"]), "条", False),
         ("规则总耗时", lambda d: (us_to_s(d["baseline"]["real_rule_time_us"]), us_to_s(d["final"]["real_rule_time_us"])), "秒", True),
         ("真实基准流量运行时间", lambda d: (ms_to_s(d["baseline"]["real_runtime_ms"]), ms_to_s(d["final"]["real_runtime_ms"])), "秒", True),
         ("实验流量运行时间", lambda d: (ms_to_s(d["baseline"]["exp_runtime_ms"]), ms_to_s(d["final"]["exp_runtime_ms"])), "秒", True),
     ]
-    x_start, y_start = 62, 116
+    x_start, y_start = 28, 24
     panel_w, panel_h = 560, 300
-    x_gap, y_gap = 70, 70
+    x_gap, y_gap = 44, 44
     day_names = [label.split("实验")[0] for _, label in DAYS]
     for idx, (title, getter, unit, lower_is_better) in enumerate(panels):
         col = idx % 2
@@ -656,15 +645,10 @@ def generate_cross_dataset_summary(data: dict) -> None:
 
 def generate_fp_miss_trend(data: dict) -> None:
     path = ensure_dir("06_fp_miss_by_round")
-    width, height = 1280, 860
-    parts = svg_doc(
-        width,
-        height,
-        "各轮误报率与漏报率变化趋势",
-        "橙线表示误报率，蓝线表示漏报率；红色空心点表示该轮被回滚，体现阈值约束机制。",
-    )
+    width, height = 1220, 692
+    parts = svg_doc(width, height)
     panel_w, panel_h = 560, 300
-    x_start, y_start, x_gap, y_gap = 70, 116, 70, 70
+    x_start, y_start, x_gap, y_gap = 28, 24, 44, 44
     for idx, (day, label) in enumerate(DAYS):
         d = data[day]
         runs = d["runs"]
@@ -724,15 +708,10 @@ def generate_fp_miss_trend(data: dict) -> None:
 
 def generate_rule_time_trend(data: dict) -> None:
     path = ensure_dir("07_rule_time_by_round")
-    width, height = 1280, 860
-    parts = svg_doc(
-        width,
-        height,
-        "各轮规则匹配耗时变化趋势",
-        "规则总耗时来自 real 实例的 profiler 汇总，单位为秒；红色空心点表示该候选轮次被回滚。",
-    )
+    width, height = 1220, 692
+    parts = svg_doc(width, height)
     panel_w, panel_h = 560, 300
-    x_start, y_start, x_gap, y_gap = 70, 116, 70, 70
+    x_start, y_start, x_gap, y_gap = 28, 24, 44, 44
     for idx, (day, label) in enumerate(DAYS):
         d = data[day]
         runs = d["runs"]
@@ -791,15 +770,10 @@ def generate_rule_time_trend(data: dict) -> None:
 
 def generate_rule_count_reduction(data: dict) -> None:
     path = ensure_dir("08_rule_count_reduction")
-    width, height = 1180, 620
-    parts = svg_doc(
-        width,
-        height,
-        "最终规则集启用与裁剪数量",
-        "总规则数保持 47068 条；橙色部分为最终规则集中被裁剪/禁用的规则。",
-    )
-    plot_x, plot_y = 210, 120
-    plot_w, row_h = 850, 72
+    width, height = 1120, 350
+    parts = svg_doc(width, height)
+    plot_x, plot_y = 132, 30
+    plot_w, row_h = 850, 64
     max_total = max(data[day]["rules_by_run"][0]["total_rules"] for day, _ in DAYS)
     for idx, (day, label) in enumerate(DAYS):
         d = data[day]
@@ -841,13 +815,8 @@ def generate_rule_count_reduction(data: dict) -> None:
 
 def generate_strategy_contribution(data: dict) -> None:
     path = ensure_dir("09_strategy_contribution")
-    width, height = 1380, 720
-    parts = svg_doc(
-        width,
-        height,
-        "各裁剪策略的提交贡献",
-        "统计 committed=1 的 trim_decisions。SAFE 策略贡献主要来自静态低风险裁剪，ITER 策略体现基于反馈评估的逐轮优化。",
-    )
+    width, height = 1120, 390
+    parts = svg_doc(width, height)
     strategy_colors = {
         "safe_source_file_browser": PALETTE["safe1"],
         "safe_source_file_protocols": PALETTE["safe2"],
@@ -858,8 +827,8 @@ def generate_strategy_contribution(data: dict) -> None:
         "iter_low_yield_hot_rules": PALETTE["iter3"],
         "iter_high_cost_rules": PALETTE["iter4"],
     }
-    plot_x, plot_y = 210, 122
-    plot_w, row_h = 900, 78
+    plot_x, plot_y = 130, 28
+    plot_w, row_h = 860, 66
     counts_by_day = {day: strategy_counts(data[day]["decisions"], committed=1) for day, _ in DAYS}
     max_total = max(sum(c.values()) for c in counts_by_day.values())
     for idx, (day, label) in enumerate(DAYS):
@@ -882,7 +851,7 @@ def generate_strategy_contribution(data: dict) -> None:
     for i, strategy in enumerate(STRATEGY_ORDER):
         if all(counts_by_day[day][strategy] == 0 for day, _ in DAYS):
             continue
-        cx = lx + (i % 4) * 285
+        cx = lx + (i % 4) * 260
         cy = ly + (i // 4) * 28
         parts.append(f'<rect x="{cx}" y="{cy}" width="14" height="14" fill="{strategy_colors[strategy]}"/>')
         parts.append(f'<text class="small" x="{cx + 22}" y="{cy + 12}">{esc(STRATEGY_LABELS[strategy])}</text>')
@@ -907,15 +876,10 @@ def generate_strategy_contribution(data: dict) -> None:
 
 def generate_commit_rollback_timeline(data: dict) -> None:
     path = ensure_dir("10_commit_rollback_timeline")
-    width, height = 1280, 620
-    parts = svg_doc(
-        width,
-        height,
-        "各数据集提交与回滚轮次",
-        "绿色实心点为提交轮次，红色空心点为回滚轮次。回滚通常来自漏报率增量超过阈值，随后 factor 减小。",
-    )
-    x0, y0 = 130, 136
-    plot_w, row_h = 1010, 86
+    width, height = 1080, 410
+    parts = svg_doc(width, height)
+    x0, y0 = 120, 58
+    plot_w, row_h = 920, 74
     for run_id in range(17):
         x = x0 + run_id * plot_w / 16
         parts.append(f'<line class="grid" x1="{x:.1f}" y1="{y0 - 20}" x2="{x:.1f}" y2="{y0 + row_h * 3 + 28}"/>')
@@ -1041,7 +1005,7 @@ def generate_index(data: dict) -> None:
         ("12_core_class_diagram_mermaid", "核心类与数据结构图", "Mermaid"),
         ("13_strategy_plugin_detail_mermaid", "策略插件注册与调用图", "Mermaid"),
     ]
-    lines = ["# Snort 性能优化论文图表", "", "所有图片标题、坐标轴、图例和说明均使用中文；SVG 采用白色背景、直角边框和低饱和论文风格配色。", ""]
+    lines = ["# Snort 性能优化论文图表", "", "所有坐标轴、图例和说明均使用中文；SVG 采用白色背景、直角边框和低饱和论文风格配色。", ""]
     lines.append("| 目录 | 图表 | 文件类型 |")
     lines.append("| --- | --- | --- |")
     for dirname, title, kind in entries:

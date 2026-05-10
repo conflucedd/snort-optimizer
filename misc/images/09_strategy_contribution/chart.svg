@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1380" height="720" viewBox="0 0 1380 720">
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="390" viewBox="0 0 1120 390">
 <defs>
 <style>
 text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', 'SimHei', 'WenQuanYi Micro Hei', sans-serif; fill: #111827; }
-.title { font-size: 22px; font-weight: 700; }
-.subtitle { font-size: 13px; fill: #4b5563; }
 .axis { stroke: #6b7280; stroke-width: 1; }
 .grid { stroke: #e5e7eb; stroke-width: 1; }
 .label { font-size: 12px; fill: #374151; }
@@ -13,58 +11,56 @@ text { font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei',
 .note { font-size: 12px; fill: #4b5563; }
 </style>
 </defs>
-<rect x="0" y="0" width="1380" height="720" fill="#ffffff"/>
-<text class="title" x="40" y="42">各裁剪策略的提交贡献</text>
-<text class="subtitle" x="40" y="68">统计 committed=1 的 trim_decisions。SAFE 策略贡献主要来自静态低风险裁剪，ITER 策略体现基于反馈评估的逐轮优化。</text>
-<text class="label" x="192" y="152" text-anchor="end">周二实验流量</text>
-<rect x="210.0" y="122" width="771.2" height="36" fill="#0072b2"/>
-<text class="small" x="595.6" y="146" text-anchor="middle" style="fill:#ffffff">16,267</text>
-<rect x="981.2" y="122" width="73.0" height="36" fill="#009e73"/>
-<text class="small" x="1017.7" y="146" text-anchor="middle" style="fill:#ffffff">1,539</text>
-<rect x="1054.2" y="122" width="0.1" height="36" fill="#e69f00"/>
-<rect x="1054.3" y="122" width="2.9" height="36" fill="#d55e00"/>
-<rect x="1057.2" y="122" width="17.7" height="36" fill="#cc79a7"/>
-<rect x="1074.9" y="122" width="2.8" height="36" fill="#6a3d9a"/>
-<text class="small" x="1130" y="146">合计 18,302</text>
-<text class="label" x="192" y="230" text-anchor="end">周三实验流量</text>
-<rect x="210.0" y="200" width="771.2" height="36" fill="#0072b2"/>
-<text class="small" x="595.6" y="224" text-anchor="middle" style="fill:#ffffff">16,267</text>
-<rect x="981.2" y="200" width="73.0" height="36" fill="#009e73"/>
-<text class="small" x="1017.7" y="224" text-anchor="middle" style="fill:#ffffff">1,539</text>
-<rect x="1054.2" y="200" width="0.1" height="36" fill="#e69f00"/>
-<rect x="1054.3" y="200" width="3.3" height="36" fill="#d55e00"/>
-<rect x="1057.6" y="200" width="17.6" height="36" fill="#cc79a7"/>
-<text class="small" x="1130" y="224">合计 18,249</text>
-<text class="label" x="192" y="308" text-anchor="end">周四实验流量</text>
-<rect x="210.0" y="278" width="771.2" height="36" fill="#0072b2"/>
-<text class="small" x="595.6" y="302" text-anchor="middle" style="fill:#ffffff">16,267</text>
-<rect x="981.2" y="278" width="73.0" height="36" fill="#009e73"/>
-<text class="small" x="1017.7" y="302" text-anchor="middle" style="fill:#ffffff">1,539</text>
-<rect x="1054.2" y="278" width="0.1" height="36" fill="#e69f00"/>
-<rect x="1054.3" y="278" width="2.7" height="36" fill="#d55e00"/>
-<rect x="1057.0" y="278" width="17.5" height="36" fill="#cc79a7"/>
-<rect x="1074.6" y="278" width="35.3" height="36" fill="#6a3d9a"/>
-<text class="small" x="1130" y="302">合计 18,980</text>
-<text class="label" x="192" y="386" text-anchor="end">周五实验流量</text>
-<rect x="210.0" y="356" width="771.2" height="36" fill="#0072b2"/>
-<text class="small" x="595.6" y="380" text-anchor="middle" style="fill:#ffffff">16,267</text>
-<rect x="981.2" y="356" width="73.0" height="36" fill="#009e73"/>
-<text class="small" x="1017.7" y="380" text-anchor="middle" style="fill:#ffffff">1,539</text>
-<rect x="1054.2" y="356" width="0.1" height="36" fill="#e69f00"/>
-<rect x="1054.3" y="356" width="2.7" height="36" fill="#d55e00"/>
-<rect x="1057.1" y="356" width="17.7" height="36" fill="#cc79a7"/>
-<rect x="1074.8" y="356" width="35.2" height="36" fill="#6a3d9a"/>
-<text class="small" x="1130" y="380">合计 18,983</text>
-<rect x="210" y="464" width="14" height="14" fill="#0072b2"/>
-<text class="small" x="232" y="476">浏览器/文件类 SAFE</text>
-<rect x="495" y="464" width="14" height="14" fill="#009e73"/>
-<text class="small" x="517" y="476">不常用协议 SAFE</text>
-<rect x="210" y="492" width="14" height="14" fill="#e69f00"/>
-<text class="small" x="232" y="504">协议覆盖 ITER</text>
-<rect x="495" y="492" width="14" height="14" fill="#d55e00"/>
-<text class="small" x="517" y="504">高误报低利用率 ITER</text>
-<rect x="780" y="492" width="14" height="14" fill="#cc79a7"/>
-<text class="small" x="802" y="504">高频低收益 ITER</text>
-<rect x="1065" y="492" width="14" height="14" fill="#6a3d9a"/>
-<text class="small" x="1087" y="504">高成本规则 ITER</text>
+<rect x="0" y="0" width="1120" height="390" fill="#ffffff"/>
+<text class="label" x="112" y="58" text-anchor="end">周二实验流量</text>
+<rect x="130.0" y="28" width="737.0" height="36" fill="#0072b2"/>
+<text class="small" x="498.5" y="52" text-anchor="middle" style="fill:#ffffff">16,267</text>
+<rect x="867.0" y="28" width="69.7" height="36" fill="#009e73"/>
+<text class="small" x="901.8" y="52" text-anchor="middle" style="fill:#ffffff">1,539</text>
+<rect x="936.7" y="28" width="0.1" height="36" fill="#e69f00"/>
+<rect x="936.8" y="28" width="2.8" height="36" fill="#d55e00"/>
+<rect x="939.6" y="28" width="16.9" height="36" fill="#cc79a7"/>
+<rect x="956.5" y="28" width="2.7" height="36" fill="#6a3d9a"/>
+<text class="small" x="1010" y="52">合计 18,302</text>
+<text class="label" x="112" y="124" text-anchor="end">周三实验流量</text>
+<rect x="130.0" y="94" width="737.0" height="36" fill="#0072b2"/>
+<text class="small" x="498.5" y="118" text-anchor="middle" style="fill:#ffffff">16,267</text>
+<rect x="867.0" y="94" width="69.7" height="36" fill="#009e73"/>
+<text class="small" x="901.8" y="118" text-anchor="middle" style="fill:#ffffff">1,539</text>
+<rect x="936.7" y="94" width="0.1" height="36" fill="#e69f00"/>
+<rect x="936.8" y="94" width="3.1" height="36" fill="#d55e00"/>
+<rect x="939.9" y="94" width="16.8" height="36" fill="#cc79a7"/>
+<text class="small" x="1010" y="118">合计 18,249</text>
+<text class="label" x="112" y="190" text-anchor="end">周四实验流量</text>
+<rect x="130.0" y="160" width="737.0" height="36" fill="#0072b2"/>
+<text class="small" x="498.5" y="184" text-anchor="middle" style="fill:#ffffff">16,267</text>
+<rect x="867.0" y="160" width="69.7" height="36" fill="#009e73"/>
+<text class="small" x="901.8" y="184" text-anchor="middle" style="fill:#ffffff">1,539</text>
+<rect x="936.7" y="160" width="0.1" height="36" fill="#e69f00"/>
+<rect x="936.8" y="160" width="2.6" height="36" fill="#d55e00"/>
+<rect x="939.4" y="160" width="16.8" height="36" fill="#cc79a7"/>
+<rect x="956.2" y="160" width="33.7" height="36" fill="#6a3d9a"/>
+<text class="small" x="1010" y="184">合计 18,980</text>
+<text class="label" x="112" y="256" text-anchor="end">周五实验流量</text>
+<rect x="130.0" y="226" width="737.0" height="36" fill="#0072b2"/>
+<text class="small" x="498.5" y="250" text-anchor="middle" style="fill:#ffffff">16,267</text>
+<rect x="867.0" y="226" width="69.7" height="36" fill="#009e73"/>
+<text class="small" x="901.8" y="250" text-anchor="middle" style="fill:#ffffff">1,539</text>
+<rect x="936.7" y="226" width="0.1" height="36" fill="#e69f00"/>
+<rect x="936.8" y="226" width="2.6" height="36" fill="#d55e00"/>
+<rect x="939.4" y="226" width="16.9" height="36" fill="#cc79a7"/>
+<rect x="956.4" y="226" width="33.6" height="36" fill="#6a3d9a"/>
+<text class="small" x="1010" y="250">合计 18,983</text>
+<rect x="130" y="322" width="14" height="14" fill="#0072b2"/>
+<text class="small" x="152" y="334">浏览器/文件类 SAFE</text>
+<rect x="390" y="322" width="14" height="14" fill="#009e73"/>
+<text class="small" x="412" y="334">不常用协议 SAFE</text>
+<rect x="130" y="350" width="14" height="14" fill="#e69f00"/>
+<text class="small" x="152" y="362">协议覆盖 ITER</text>
+<rect x="390" y="350" width="14" height="14" fill="#d55e00"/>
+<text class="small" x="412" y="362">高误报低利用率 ITER</text>
+<rect x="650" y="350" width="14" height="14" fill="#cc79a7"/>
+<text class="small" x="672" y="362">高频低收益 ITER</text>
+<rect x="910" y="350" width="14" height="14" fill="#6a3d9a"/>
+<text class="small" x="932" y="362">高成本规则 ITER</text>
 </svg>
