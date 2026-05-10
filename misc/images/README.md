@@ -15,6 +15,8 @@
 | `09_strategy_contribution` | 各裁剪策略的提交贡献 | SVG + Markdown |
 | `10_commit_rollback_timeline` | 各数据集提交与回滚轮次 | SVG + Markdown |
 | `11_top_trimmed_rules` | 典型裁剪规则表 | Markdown |
+| `12_core_class_diagram_mermaid` | 核心类与数据结构图 | Mermaid |
+| `13_strategy_plugin_detail_mermaid` | 策略插件注册与调用图 | Mermaid |
 
 ## 数据来源
 

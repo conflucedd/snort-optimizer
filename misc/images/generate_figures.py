@@ -374,6 +374,182 @@ flowchart LR
     profiler -- time_us/checks --> decisions
             """,
         ),
+        "12_core_class_diagram_mermaid": (
+            "核心类与数据结构图",
+            """
+classDiagram
+    direction LR
+    class Analyzer {
+        -Config cfg
+        -RegisteredFunction list functions
+        +Register(fn)
+        +RegisterAll(functions)
+        +Run(ctx) Result
+    }
+    class Scheduler {
+        -Config cfg
+        -RegisteredFunction list functions
+        +Run(ctx) Result
+        -execute(type,input) TrimDecision list
+        -executeFunction(fn,input) TrimDecision list
+        -evaluateCandidate(accepted,candidate) bool
+    }
+    class RegisteredFunction {
+        +string Name
+        +FunctionType Type
+        +TrimFunction Fn
+    }
+    class FunctionInput {
+        +string ExpDBPath
+        +string RealDBPath
+        +string BaseDBPath
+        +int Round
+        +int64 SourceRunID
+        +float64 Factor
+    }
+    class TrimDecision {
+        +int64 GID
+        +int64 SID
+        +int64 Rev
+        +string SourceFile
+        +string Msg
+        +string Reason
+        +map Metrics
+    }
+    class TrimmedRule {
+        +int64 GID
+        +int64 SID
+        +int64 Rev
+        +string list Reasons
+        +string list Functions
+        +FunctionType Type
+        +map Metrics
+    }
+    class RunResult {
+        +int64 RunID
+        +bool Committed
+        +bool RolledBack
+        +float64 Factor
+        +string Reason
+        +Evaluation Evaluation
+    }
+    class Evaluation {
+        +int64 FalsePositiveFlows
+        +int64 MissedFlows
+        +float64 FalsePositiveRate
+        +float64 MissRate
+        +int64 RealRuleTimeUS
+        +float64 RealAvgCPU
+        +float64 RealAvgMemMB
+    }
+    class Result {
+        +string AnalyserDBPath
+        +int64 FinalRunID
+        +TrimmedRule list TrimmedRules
+        +RunResult list Runs
+    }
+    class InstanceSet {
+        +SnortInstance Exp
+        +SnortInstance Real
+        +SnortInstance Base
+        +runAll(ctx,cfg,runID)
+    }
+    class SnortInstance {
+        +string Name
+        +string PcapPath
+        +string WorkDir
+        +string DBPath
+        +bool NeedAlert
+        +run(ctx,cfg,runID)
+    }
+    class Runner {
+        -wrap.Config cfg
+        -exec.Cmd cmd
+        -RunInfo runInfo
+        +Start()
+        +Wait(ctx)
+        +Stop()
+        +StartupStats()
+    }
+
+    Analyzer o-- RegisteredFunction : 注册策略
+    Analyzer --> Scheduler : 创建并运行
+    Scheduler o-- RegisteredFunction : 保存策略列表
+    Scheduler --> FunctionInput : 构造策略输入
+    RegisteredFunction --> TrimDecision : Fn 返回
+    Scheduler --> TrimmedRule : 聚合裁剪结果
+    Scheduler --> RunResult : 写入每轮结果
+    RunResult *-- Evaluation
+    Result *-- RunResult
+    Result *-- TrimmedRule
+    Scheduler --> InstanceSet : 调度三实例
+    InstanceSet *-- SnortInstance
+    SnortInstance --> Runner : wrap.NewRunner
+            """,
+        ),
+        "13_strategy_plugin_detail_mermaid": (
+            "策略插件注册与调用图",
+            """
+flowchart LR
+    subgraph contracts[接口契约]
+        registered[RegisteredFunction<br/>Name: 稳定策略名<br/>Type: SAFE 或 ITER<br/>Fn: TrimFunction]
+        input[FunctionInput<br/>ExpDBPath / RealDBPath / BaseDBPath<br/>Round / SourceRunID / Factor]
+        output[TrimDecision<br/>GID / SID / Rev<br/>Reason / Metrics<br/>SourceFile / Msg]
+    end
+
+    subgraph factories[内置策略工厂]
+        safe1[safe.SourceFileBrowser<br/>SAFE]
+        safe2[safe.SourceFileProtocols<br/>SAFE]
+        safe3[safe.InactiveSystemdServices<br/>SAFE]
+        safe4[safe.OrphanFlowbits<br/>SAFE]
+        iter1[iter.ProtocolAlertOverlap<br/>ITER]
+        iter2[iter.HighFPLowUtilization<br/>ITER]
+        iter3[iter.LowYieldHotRules<br/>ITER]
+        iter4[iter.HighCostRules<br/>ITER]
+    end
+
+    subgraph registry[注册与筛选]
+        cli[analyser/cmd<br/>--strategy / --disable-strategy]
+        api[server/api/jobs.go<br/>AnalysisStartRequest]
+        select[selectStrategies<br/>按名称启用或禁用]
+        register[Analyzer.RegisterAll<br/>校验 Name / Type / Fn]
+        funcs[Analyzer.functions<br/>RegisteredFunction 列表]
+    end
+
+    subgraph dispatcher[调度器调用]
+        scheduler[Scheduler<br/>持有 functions]
+        split[functionsByType<br/>SAFE / ITER 分组]
+        safeCall[execute SAFE<br/>同一阶段批量调用]
+        iterCall[executeFunction ITER<br/>逐策略、逐轮调用]
+        enrich[AggregateAndEnrich<br/>过滤非启用规则<br/>补充 msg/source_file/rev<br/>合并重复 GID:SID]
+        apply[CloneRulesForRun<br/>禁用候选规则<br/>提交或回滚由 Scheduler 决定]
+    end
+
+    safe1 --> registered
+    safe2 --> registered
+    safe3 --> registered
+    safe4 --> registered
+    iter1 --> registered
+    iter2 --> registered
+    iter3 --> registered
+    iter4 --> registered
+    registered --> select
+    cli --> select
+    api --> select
+    select --> register
+    register --> funcs
+    funcs --> scheduler
+    scheduler --> split
+    split --> safeCall
+    split --> iterCall
+    input --> safeCall
+    input --> iterCall
+    safeCall --> output
+    iterCall --> output
+    output --> enrich
+    enrich --> apply
+            """,
+        ),
     }
     for dirname, (title, source) in diagrams.items():
         path = ensure_dir(dirname)
@@ -862,6 +1038,8 @@ def generate_index(data: dict) -> None:
         ("09_strategy_contribution", "各裁剪策略的提交贡献", "SVG + Markdown"),
         ("10_commit_rollback_timeline", "各数据集提交与回滚轮次", "SVG + Markdown"),
         ("11_top_trimmed_rules", "典型裁剪规则表", "Markdown"),
+        ("12_core_class_diagram_mermaid", "核心类与数据结构图", "Mermaid"),
+        ("13_strategy_plugin_detail_mermaid", "策略插件注册与调用图", "Mermaid"),
     ]
     lines = ["# Snort 性能优化论文图表", "", "所有图片标题、坐标轴、图例和说明均使用中文；SVG 采用白色背景、直角边框和低饱和论文风格配色。", ""]
     lines.append("| 目录 | 图表 | 文件类型 |")
